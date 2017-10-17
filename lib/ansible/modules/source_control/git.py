@@ -1087,6 +1087,15 @@ def main():
         # requested.
         result['before'] = get_version(module, git_path, dest)
         result.update(after=result['before'])
+        if archive:
+            # Git archive is not supported by all git servers, so
+            # we will first clone and perform git archive from local directory
+            if module.check_mode:
+                result.update(changed=True)
+                module.exit_json(**result)
+
+            create_archive(git_path, module, dest, archive, version, repo, result)
+
         module.exit_json(**result)
     else:
         # else do a pull
