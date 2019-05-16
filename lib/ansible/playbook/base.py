@@ -23,7 +23,7 @@ from ansible.playbook.attribute import Attribute, FieldAttribute
 from ansible.parsing.dataloader import DataLoader
 from ansible.utils.display import Display
 from ansible.utils.sentinel import Sentinel
-from ansible.utils.vars import combine_vars, isidentifier, get_unique_id
+from ansible.utils.vars import combine_vars, get_unique_id, validate_variable_names
 
 display = Display()
 
@@ -461,21 +461,16 @@ class FieldAttributeBase(with_metaclass(BaseMeta, object)):
         list into a single dictionary.
         '''
 
-        def _validate_variable_keys(ds):
-            for key in ds:
-                if not isidentifier(key):
-                    raise TypeError("'%s' is not a valid variable name" % key)
-
         try:
             if isinstance(ds, dict):
-                _validate_variable_keys(ds)
+                validate_variable_names(ds.keys())
                 return combine_vars(self.vars, ds)
             elif isinstance(ds, list):
                 all_vars = self.vars
                 for item in ds:
                     if not isinstance(item, dict):
                         raise ValueError
-                    _validate_variable_keys(item)
+                    validate_variable_names(item.keys())
                     all_vars = combine_vars(all_vars, item)
                 return all_vars
             elif ds is None:
@@ -486,7 +481,7 @@ class FieldAttributeBase(with_metaclass(BaseMeta, object)):
             raise AnsibleParserError("Vars in a %s must be specified as a dictionary, or a list of dictionaries" % self.__class__.__name__,
                                      obj=ds, orig_exc=e)
         except TypeError as e:
-            raise AnsibleParserError("Invalid variable name in vars specified for %s: %s" % (self.__class__.__name__, e), obj=ds, orig_exc=e)
+            raise AnsibleParserError("Invalid variable name in 'vars' specified for %s: %s" % (self.__class__.__name__, e), obj=ds, orig_exc=e)
 
     def _extend_value(self, value, new_value, prepend=False):
         '''

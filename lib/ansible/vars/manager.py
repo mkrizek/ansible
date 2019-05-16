@@ -43,7 +43,7 @@ from ansible.vars.fact_cache import FactCache
 from ansible.template import Templar
 from ansible.utils.display import Display
 from ansible.utils.listify import listify_lookup_plugin_terms
-from ansible.utils.vars import combine_vars, load_extra_vars, load_options_vars
+from ansible.utils.vars import combine_vars, load_extra_vars, load_options_vars, validate_variable_names
 from ansible.utils.unsafe_proxy import wrap_var
 from ansible.vars.clean import namespace_facts, clean_facts
 
@@ -343,6 +343,10 @@ class VariableManager:
                                 data = preprocess_vars(self._loader.load_from_file(vars_file, unsafe=True))
                                 if data is not None:
                                     for item in data:
+                                        try:
+                                            validate_variable_names(item)
+                                        except TypeError as e:
+                                            raise AnsibleError("Invalid variable name specified in 'vars_files': %s" % to_native(e))
                                         all_vars = combine_vars(all_vars, item)
                                 break
                             except AnsibleFileNotFound:

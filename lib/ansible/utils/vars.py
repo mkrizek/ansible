@@ -28,10 +28,10 @@ from json import dumps
 
 from ansible import constants as C
 from ansible import context
-from ansible.errors import AnsibleError, AnsibleOptionsError
+from ansible.errors import AnsibleError, AnsibleAssertionError, AnsibleOptionsError
 from ansible.module_utils.six import iteritems, string_types
 from ansible.module_utils._text import to_native, to_text
-from ansible.module_utils.common._collections_compat import MutableMapping
+from ansible.module_utils.common._collections_compat import MutableMapping, Iterable
 from ansible.parsing.splitter import parse_kv
 
 
@@ -135,6 +135,11 @@ def load_extra_vars(loader):
             # Arguments as Key-value
             data = parse_kv(extra_vars_opt)
 
+        try:
+            validate_variable_names(data)
+        except TypeError as e:
+            raise AnsibleError("Invalid variable name in 'extra vars' specified: %s" % e)
+
         if isinstance(data, MutableMapping):
             extra_vars = combine_vars(extra_vars, data)
         else:
@@ -195,3 +200,28 @@ def isidentifier(ident):
         return False
 
     return True
+
+
+def validate_variable_names(names):
+    """
+    This checks that all variable names are valid or raises an error.
+
+    :arg data: iterable of names
+    :raises TypeError: if one of the variable names is not valid
+    :raises AnsibleError: if one of the variable names is a reserved names and ANSIBLE_RESERVED_VAR_NAMES=error
+    """
+
+    # avoid circular imports
+    from ansible.vars.reserved import handle_reserved_vars
+
+    if not isinstance(names, Iterable):
+        raise AnsibleAssertionError("'names' must be of type <Iterable>, was: %s" % type(names))
+
+    handle_reserved_vars(names)
+
+    for name in names:
+        if not isidentifier(name):
+            raise TypeError(
+                "The variable name '%s' is not valid. Variables must start with a letter or underscore "
+                "character, and contain only letters, numbers and underscores." % name
+            )

@@ -11,6 +11,7 @@ from ansible.errors import AnsibleError
 from ansible.module_utils.six import string_types
 from ansible.module_utils._text import to_native, to_text
 from ansible.plugins.action import ActionBase
+from ansible.utils.vars import validate_variable_names
 
 
 class ActionModule(ActionBase):
@@ -127,6 +128,11 @@ class ActionModule(ActionBase):
             scope = dict()
             scope[self.return_results_as_name] = results
             results = scope
+
+        try:
+            validate_variable_names(results.keys())
+        except TypeError as e:
+            raise AnsibleError("Invalid variable name specified in 'include_vars': '%s'" % to_native(e))
 
         result = super(ActionModule, self).run(task_vars=task_vars)
 

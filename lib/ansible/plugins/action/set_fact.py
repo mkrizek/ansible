@@ -18,10 +18,11 @@
 from __future__ import (absolute_import, division, print_function)
 __metaclass__ = type
 
+from ansible.module_utils._text import to_text
 from ansible.module_utils.six import iteritems, string_types
 from ansible.module_utils.parsing.convert_bool import boolean
 from ansible.plugins.action import ActionBase
-from ansible.utils.vars import isidentifier
+from ansible.utils.vars import validate_variable_names
 
 import ansible.constants as C
 
@@ -45,10 +46,11 @@ class ActionModule(ActionBase):
             for (k, v) in iteritems(self._task.args):
                 k = self._templar.template(k)
 
-                if not isidentifier(k):
+                try:
+                    validate_variable_names([k])
+                except TypeError as e:
                     result['failed'] = True
-                    result['msg'] = ("The variable name '%s' is not valid. Variables must start with a letter or underscore character, and contain only "
-                                     "letters, numbers and underscores." % k)
+                    result['msg'] = to_text(e)
                     return result
 
                 if not C.DEFAULT_JINJA2_NATIVE and isinstance(v, string_types) and v.lower() in ('true', 'false', 'yes', 'no'):

@@ -214,6 +214,11 @@ class Play(Base, Taggable, CollectionSearch):
                 if 'name' not in prompt_data:
                     raise AnsibleParserError("Invalid vars_prompt data structure", obj=ds)
                 else:
+                    from ansible.utils.vars import validate_variable_names
+                    try:
+                        validate_variable_names([prompt_data['name']])
+                    except TypeError as e:
+                        raise AnsibleParserError("Invalid variable name in 'vars_prompt' specified: %s" % e)
                     vars_prompts.append(prompt_data)
         return vars_prompts
 
