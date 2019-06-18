@@ -1,4 +1,3 @@
-
 from units.compat import unittest
 from units.mock.loader import DictDataLoader
 from units.compat.mock import MagicMock
@@ -86,19 +85,6 @@ class TestConditional(unittest.TestCase):
                 u"some_defined_dict.key2 is not undefined"]
         ret = self._eval_con(when, variables)
         self.assertTrue(ret)
-
-    def test_dict_undefined_values(self):
-        variables = {'dict_value': 1,
-                     'some_defined_dict_with_undefined_values': {'key1': 'value1',
-                                                                 'key2': '{{ dict_value }}',
-                                                                 'key3': '{{ undefined_dict_value }}'
-                                                                 }}
-
-        when = [u"some_defined_dict_with_undefined_values is defined"]
-        self.assertRaisesRegexp(errors.AnsibleError,
-                                "The conditional check 'some_defined_dict_with_undefined_values is defined' failed.",
-                                self._eval_con,
-                                when, variables)
 
     def test_nested_hostvars_undefined_values(self):
         variables = {'dict_value': 1,
