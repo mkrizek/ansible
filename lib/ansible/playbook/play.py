@@ -218,7 +218,7 @@ class Play(Base, Taggable, CollectionSearch):
                     try:
                         validate_variable_names([prompt_data['name']])
                     except TypeError as e:
-                        raise AnsibleParserError("Invalid variable name in 'vars_prompt' specified: %s" % e)
+                        raise AnsibleParserError("Invalid variable name in 'vars_prompt' specified: %s" % to_native(e))
                     vars_prompts.append(prompt_data)
         return vars_prompts
 

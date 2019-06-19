@@ -138,7 +138,7 @@ def load_extra_vars(loader):
         try:
             validate_variable_names(data)
         except TypeError as e:
-            raise AnsibleError("Invalid variable name in 'extra vars' specified: %s" % e)
+            raise AnsibleError("Invalid variable name in 'extra vars' specified: %s" % to_native(e))
 
         if isinstance(data, MutableMapping):
             extra_vars = combine_vars(extra_vars, data)
