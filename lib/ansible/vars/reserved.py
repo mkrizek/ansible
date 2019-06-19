@@ -71,6 +71,7 @@ def handle_reserved_vars(myvars):
             elif C.RESERVED_VAR_NAMES == 'error':
                 raise AnsibleError(msg)
 
+
 def is_reserved_name(name):
     return name in _RESERVED_NAMES
 
