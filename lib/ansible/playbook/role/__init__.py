@@ -208,7 +208,7 @@ class Role(Base, Conditional, Taggable, CollectionSearch):
         try:
             validate_variable_names(self._role_vars.keys())
         except TypeError as e:
-            raise AnsibleError("Invalid variable name in 'vars/main.yml' specified for role '%s': '%s'" % (self._role_name, to_native(e)))
+            raise AnsibleParserError("Invalid variable name in 'vars/main.yml' specified for role '%s': '%s'" % (self._role_name, to_native(e)))
 
         self._default_vars = self._load_role_yaml('defaults', main=self._from_files.get('defaults'), allow_dir=True)
         if self._default_vars is None:
@@ -219,7 +219,7 @@ class Role(Base, Conditional, Taggable, CollectionSearch):
         try:
             validate_variable_names(self._default_vars.keys())
         except TypeError as e:
-            raise AnsibleError("Invalid variable name in 'defaults/main.yml' specified for role '%s': '%s'" % (self._role_name, to_native(e)))
+            raise AnsibleParserError("Invalid variable name in 'defaults/main.yml' specified for role '%s': '%s'" % (self._role_name, to_native(e)))
 
         # load the role's other files, if they exist
         metadata = self._load_role_yaml('meta')
