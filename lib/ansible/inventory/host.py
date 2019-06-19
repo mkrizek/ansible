@@ -19,8 +19,10 @@
 from __future__ import (absolute_import, division, print_function)
 __metaclass__ = type
 
+from ansible.errors import AnsibleParserError
 from ansible.inventory.group import Group
-from ansible.utils.vars import combine_vars, get_unique_id
+from ansible.module_utils._text import to_native
+from ansible.utils.vars import combine_vars, get_unique_id, validate_variable_names
 
 __all__ = ['Host']
 
@@ -137,6 +139,11 @@ class Host:
                         self.remove_group(oldg)
 
     def set_variable(self, key, value):
+        try:
+            validate_variable_names([key])
+        except TypeError as e:
+            raise AnsibleParserError("Invalid variable name in inventory for host '%s' specified: '%s'" % (self.get_name(), to_native(e)))
+
         self.vars[key] = value
 
     def get_groups(self):

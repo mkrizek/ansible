@@ -20,8 +20,9 @@ __metaclass__ = type
 from itertools import chain
 
 from ansible import constants as C
-from ansible.errors import AnsibleError
+from ansible.errors import AnsibleError, AnsibleParserError
 from ansible.module_utils._text import to_native, to_text
+from ansible.utils.vars import validate_variable_names
 
 from ansible.utils.display import Display
 
@@ -245,6 +246,11 @@ class Group:
         if key == 'ansible_group_priority':
             self.set_priority(int(value))
         else:
+            try:
+                validate_variable_names([key])
+            except TypeError as e:
+                raise AnsibleParserError("Invalid variable name in inventory for group '%s' specified: '%s'" % (self.get_name(), to_native(e)))
+
             self.vars[key] = value
 
     def clear_hosts_cache(self):
