@@ -48,7 +48,7 @@ from ansible.module_utils._text import to_bytes, to_native, to_text
 from ansible.plugins.vars import BaseVarsPlugin
 from ansible.inventory.host import Host
 from ansible.inventory.group import Group
-from ansible.utils.vars import combine_vars
+from ansible.utils.vars import combine_vars, validate_variable_names
 
 FOUND = {}
 
@@ -95,6 +95,10 @@ class VarsModule(BaseVarsPlugin):
                     for found in found_files:
                         new_data = loader.load_from_file(found, cache=True, unsafe=True)
                         if new_data:  # ignore empty files
+                            try:
+                                validate_variable_names(new_data.keys())
+                            except TypeError as e:
+                                raise AnsibleParserError("Invalid variable name in '%s' specified: '%s'" % (found, to_native(e)))
                             data = combine_vars(data, new_data)
 
                 except Exception as e:
