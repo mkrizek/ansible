@@ -1,5 +1,6 @@
 - hosts: localhost
   gather_facts: no
   tasks:
-    - include_vars:
+    - name: EXPECTED FAILURE
+      include_vars:
         file: vars.yml
