@@ -220,6 +220,12 @@ class VariableManager:
                             raise AnsibleError("Cannot use v1 type vars plugin %s from %s" % (plugin._load_name, plugin._original_path))
                         else:
                             raise AnsibleError("Invalid vars plugin %s from %s" % (plugin._load_name, plugin._original_path))
+
+                try:
+                    validate_variable_names(data.keys())
+                except TypeError as e:
+                    raise AnsibleError("Invalid variable name specified: '%s'" % to_native(e))
+
                 return data
 
             # internal fuctions that actually do the work
