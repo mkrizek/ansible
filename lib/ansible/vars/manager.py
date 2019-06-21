@@ -657,6 +657,12 @@ class VariableManager:
         '''
         Sets a value in the vars_cache for a host.
         '''
+
+        try:
+            validate_variable_names([varname])
+        except TypeError as e:
+            raise AnsibleError("Invalid variable name specified: '%s'" % to_native(e))
+
         host_name = host.get_name()
         if host_name not in self._vars_cache:
             self._vars_cache[host_name] = dict()
