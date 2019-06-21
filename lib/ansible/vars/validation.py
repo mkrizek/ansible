@@ -60,11 +60,11 @@ def validate_variable_names(names):
     if not isinstance(names, Iterable):
         raise AnsibleAssertionError("'names' must be of type <Iterable>, was: %s" % type(names))
 
-    handle_reserved_vars(names)
-
     for name in names:
         if not isidentifier(name):
             raise TypeError(
                 "The variable name '%s' is not valid. Variables must start with a letter or underscore "
                 "character, and contain only letters, numbers and underscores." % name
             )
+
+    handle_reserved_vars(names)
