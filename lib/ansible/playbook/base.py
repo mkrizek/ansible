@@ -23,7 +23,8 @@ from ansible.playbook.attribute import Attribute, FieldAttribute
 from ansible.parsing.dataloader import DataLoader
 from ansible.utils.display import Display
 from ansible.utils.sentinel import Sentinel
-from ansible.utils.vars import combine_vars, get_unique_id, validate_variable_names
+from ansible.utils.vars import combine_vars, get_unique_id
+from ansible.vars.validation import validate_variable_names
 
 display = Display()
 

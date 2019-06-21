@@ -22,7 +22,7 @@ from itertools import chain
 from ansible import constants as C
 from ansible.errors import AnsibleError, AnsibleParserError
 from ansible.module_utils._text import to_native, to_text
-from ansible.utils.vars import validate_variable_names
+from ansible.vars.validation import validate_variable_names
 
 from ansible.utils.display import Display
 

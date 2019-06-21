@@ -19,7 +19,6 @@
 from __future__ import (absolute_import, division, print_function)
 __metaclass__ = type
 
-import ast
 import random
 import uuid
 
@@ -28,11 +27,12 @@ from json import dumps
 
 from ansible import constants as C
 from ansible import context
-from ansible.errors import AnsibleError, AnsibleAssertionError, AnsibleOptionsError
-from ansible.module_utils.six import iteritems, string_types
+from ansible.errors import AnsibleError, AnsibleOptionsError
+from ansible.module_utils.six import iteritems
 from ansible.module_utils._text import to_native, to_text
-from ansible.module_utils.common._collections_compat import MutableMapping, Iterable
+from ansible.module_utils.common._collections_compat import MutableMapping
 from ansible.parsing.splitter import parse_kv
+from ansible.vars.validation import validate_variable_names
 
 
 _MAXSIZE = 2 ** 32
@@ -171,57 +171,6 @@ def load_options_vars(version):
 
 
 def isidentifier(ident):
-    """
-    Determines, if string is valid Python identifier using the ast module.
-    Originally posted at: http://stackoverflow.com/a/29586366
-    """
-
-    if not isinstance(ident, string_types):
-        return False
-
-    try:
-        root = ast.parse(ident)
-    except SyntaxError:
-        return False
-
-    if not isinstance(root, ast.Module):
-        return False
-
-    if len(root.body) != 1:
-        return False
-
-    if not isinstance(root.body[0], ast.Expr):
-        return False
-
-    if not isinstance(root.body[0].value, ast.Name):
-        return False
-
-    if root.body[0].value.id != ident:
-        return False
-
-    return True
-
-
-def validate_variable_names(names):
-    """
-    This checks that all variable names are valid or raises an error.
-
-    :arg data: iterable of names
-    :raises TypeError: if one of the variable names is not valid
-    :raises AnsibleError: if one of the variable names is a reserved names and ANSIBLE_RESERVED_VAR_NAMES=error
-    """
-
-    # avoid circular imports
-    from ansible.vars.reserved import handle_reserved_vars
-
-    if not isinstance(names, Iterable):
-        raise AnsibleAssertionError("'names' must be of type <Iterable>, was: %s" % type(names))
-
-    handle_reserved_vars(names)
-
-    for name in names:
-        if not isidentifier(name):
-            raise TypeError(
-                "The variable name '%s' is not valid. Variables must start with a letter or underscore "
-                "character, and contain only letters, numbers and underscores." % name
-            )
+    # for backward compat
+    from ansible.vars.validation import isidentifier
+    return isidentifier(ident)

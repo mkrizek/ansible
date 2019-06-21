@@ -22,7 +22,8 @@ __metaclass__ = type
 from ansible.errors import AnsibleParserError
 from ansible.inventory.group import Group
 from ansible.module_utils._text import to_native
-from ansible.utils.vars import combine_vars, get_unique_id, validate_variable_names
+from ansible.utils.vars import combine_vars, get_unique_id
+from ansible.vars.validation import validate_variable_names
 
 __all__ = ['Host']
 

@@ -30,7 +30,8 @@ from ansible.utils.listify import listify_lookup_plugin_terms
 from ansible.utils.unsafe_proxy import UnsafeProxy, wrap_var
 from ansible.vars.clean import namespace_facts, clean_facts
 from ansible.utils.display import Display
-from ansible.utils.vars import combine_vars, validate_variable_names
+from ansible.utils.vars import combine_vars
+from ansible.vars.validation import validate_variable_names
 
 display = Display()
 

@@ -16,8 +16,9 @@ from ansible.errors import AnsibleError, AnsibleOptionsError
 from ansible.inventory.host import Host
 from ansible.module_utils._text import to_bytes, to_native
 from ansible.plugins.loader import vars_loader
-from ansible.utils.vars import combine_vars, validate_variable_names
 from ansible.utils.display import Display
+from ansible.utils.vars import combine_vars
+from ansible.vars.validation import validate_variable_names
 
 display = Display()
 

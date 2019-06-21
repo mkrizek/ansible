@@ -33,7 +33,8 @@ from ansible.playbook.helpers import load_list_of_blocks
 from ansible.playbook.role.metadata import RoleMetadata
 from ansible.playbook.taggable import Taggable
 from ansible.plugins.loader import add_all_plugin_dirs
-from ansible.utils.vars import combine_vars, validate_variable_names
+from ansible.utils.vars import combine_vars
+from ansible.vars.validation import validate_variable_names
 
 
 __all__ = ['Role', 'hash_params']

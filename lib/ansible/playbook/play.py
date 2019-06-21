@@ -31,8 +31,9 @@ from ansible.playbook.collectionsearch import CollectionSearch
 from ansible.playbook.helpers import load_list_of_blocks, load_list_of_roles
 from ansible.playbook.role import Role
 from ansible.playbook.taggable import Taggable
-from ansible.vars.manager import preprocess_vars
 from ansible.utils.display import Display
+from ansible.vars.manager import preprocess_vars
+from ansible.vars.validation import validate_variable_names
 
 display = Display()
 
@@ -214,7 +215,6 @@ class Play(Base, Taggable, CollectionSearch):
                 if 'name' not in prompt_data:
                     raise AnsibleParserError("Invalid vars_prompt data structure", obj=ds)
                 else:
-                    from ansible.utils.vars import validate_variable_names
                     try:
                         validate_variable_names([prompt_data['name']])
                     except TypeError as e:
