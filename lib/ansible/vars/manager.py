@@ -633,6 +633,11 @@ class VariableManager:
             raise AnsibleAssertionError("the type of 'facts' to set for host_facts should be a Mapping but is a %s" % type(facts))
 
         try:
+            validate_variable_names(facts.keys())
+        except TypeError as e:
+            raise AnsibleError("Invalid variable name specified in facts: '%s'" % to_native(e))
+
+        try:
             host_cache = self._fact_cache[host.name]
         except KeyError:
             # We get to set this as new
@@ -654,6 +659,11 @@ class VariableManager:
 
         if not isinstance(facts, Mapping):
             raise AnsibleAssertionError("the type of 'facts' to set for nonpersistent_facts should be a Mapping but is a %s" % type(facts))
+
+        try:
+            validate_variable_names(facts.keys())
+        except TypeError as e:
+            raise AnsibleError("Invalid variable name specified in facts: '%s'" % to_native(e))
 
         try:
             self._nonpersistent_fact_cache[host.name].update(facts)
