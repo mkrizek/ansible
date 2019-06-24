@@ -17,5 +17,6 @@ ansible-playbook roles-defaults.yml "$@" 2>&1 | grep "The variable name 'True' i
 ansible-playbook roles-vars.yml "$@" 2>&1 | grep "The variable name 'True' is not valid."
 ansible-playbook roles.yml "$@" 2>&1 | grep "The variable name 'True' is not valid."
 ansible-playbook set_fact.yml "$@" 2>&1 | grep "The variable name 'True' is not valid."
+ansible-playbook set_stats.yml "$@" 2>&1 | grep "The variable name 'True' is not valid."
 ansible-playbook task_vars.yml "$@" 2>&1 | grep "The variable name 'True' is not valid."
 ansible-playbook vars_files.yml "$@" 2>&1 | grep "The variable name 'True' is not valid."

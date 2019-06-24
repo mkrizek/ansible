@@ -46,13 +46,6 @@ class ActionModule(ActionBase):
             for (k, v) in iteritems(self._task.args):
                 k = self._templar.template(k)
 
-                try:
-                    validate_variable_names([k])
-                except TypeError as e:
-                    result['failed'] = True
-                    result['msg'] = to_text(e)
-                    return result
-
                 if not C.DEFAULT_JINJA2_NATIVE and isinstance(v, string_types) and v.lower() in ('true', 'false', 'yes', 'no'):
                     v = boolean(v, strict=False)
                 facts[k] = v

@@ -64,13 +64,6 @@ class ActionModule(ActionBase):
 
                 k = self._templar.template(k)
 
-                try:
-                    validate_variable_names([k])
-                except TypeError as e:
-                    result['failed'] = True
-                    result['msg'] = to_text(e)
-                    return result
-
                 stats['data'][k] = self._templar.template(v)
 
         result['changed'] = False
