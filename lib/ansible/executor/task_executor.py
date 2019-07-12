@@ -308,6 +308,15 @@ class TaskExecutor:
         if label is None:
             label = '{{' + loop_var + '}}'
 
+        try:
+            vars_to_validate = [loop_var]
+            if index_var is not None:
+                vars_to_validate.append(index_var)
+
+            validate_variable_names(vars_to_validate)
+        except TypeError as e:
+            raise AnsibleError("Invalid variable name in 'loop_control' specified: '%s'" % to_native(e))
+
         if loop_var in task_vars:
             display.warning(u"The loop variable '%s' is already in use. "
                             u"You should set the `loop_var` value in the `loop_control` option for the task"
