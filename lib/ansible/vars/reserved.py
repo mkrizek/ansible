@@ -31,6 +31,8 @@ from ansible.utils.display import Display
 display = Display()
 
 _INTERNAL_HARDCODED = ('local_action', 'lookup', 'query', 'q')
+
+# FIXME: remove these exceptions if we can
 _RESERVE_EXCEPTIONS = frozenset(('environment', 'gather_subset', 'vars'))
 
 
@@ -61,10 +63,8 @@ def handle_reserved_vars(myvars):
 
     if C.RESERVED_VAR_NAMES != 'ignore':
         varnames = set(myvars)
-        for varname in varnames.intersection(_RESERVED_NAMES):
-            if varname in _RESERVE_EXCEPTIONS:
-                # FIXME: remove these exceptions if we can
-                continue
+        reserved_varnames_used = varnames.intersection(_RESERVED_NAMES).difference(_RESERVE_EXCEPTIONS)
+        for varname in reserved_varnames_used:
             msg = 'Found variable using reserved name: %s' % to_text(varname)
             if C.RESERVED_VAR_NAMES == 'warn':
                 display.warning(msg)
