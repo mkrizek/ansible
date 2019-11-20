@@ -109,14 +109,9 @@ class AnsibleJ2Vars(Mapping):
             except AnsibleUndefinedVariable as e:
                 from ansible.template import AnsibleUndefined
 
-                varname = e
-                res = re.search(r"'([\w_]+)' is undefined", to_native(e))
-                if res:
-                    varname = res.groups()[0]
-
                 # Instead of failing here prematurely, return AnsibleUndefined which will
                 # fail on the first usage allowing us to do lazy evaluation.
-                value = AnsibleUndefined(name=varname)
+                return AnsibleUndefined(hint=e, name=varname)
             except Exception as e:
                 msg = getattr(e, 'message', None) or to_native(e)
                 raise AnsibleError("An unhandled exception occurred while templating '%s'. "
