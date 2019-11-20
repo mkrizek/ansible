@@ -21,4 +21,4 @@ ansible-playbook corner_cases.yml -v "$@"
 ansible-playbook filter_plugins.yml -v "$@"
 
 # lazy eval
-ansible-playbook lazy_eval.yml -i ../../inventory -e @../../integration_config.yml -v "$@"
+DEFAULT_JINJA2_EXPR_LAZY_EVAL=1 ansible-playbook lazy_eval.yml -i ../../inventory -e @../../integration_config.yml -v "$@"

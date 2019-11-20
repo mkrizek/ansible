@@ -105,11 +105,14 @@ class AnsibleJ2Vars(Mapping):
             try:
                 value = self._templar.template(variable)
             except AnsibleUndefinedVariable as e:
-                from ansible.template import AnsibleUndefined
+                if C.DEFAULT_JINJA2_EXPR_LAZY_EVAL:
+                    from ansible.template import AnsibleUndefined
 
-                # Instead of failing here prematurely, return AnsibleUndefined which will
-                # fail on the first usage allowing us to do lazy evaluation.
-                return AnsibleUndefined(hint=e, name=varname)
+                    # Instead of failing here prematurely, return AnsibleUndefined which will
+                    # fail on the first usage allowing us to do lazy evaluation.
+                    return AnsibleUndefined(hint=e, name=varname)
+                else:
+                    raise
             except Exception as e:
                 msg = getattr(e, 'message', None) or to_native(e)
                 raise AnsibleError("An unhandled exception occurred while templating '%s'. "

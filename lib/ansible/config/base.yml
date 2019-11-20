@@ -738,6 +738,15 @@ DEFAULT_INVENTORY_PLUGIN_PATH:
   ini:
   - {key: inventory_plugins, section: defaults}
   type: pathspec
+DEFAULT_JINJA2_EXPR_LAZY_EVAL:
+  name: Jinja2 expressions lazy evaluation
+  default: False
+  description:
+    - Use lazy evaluation for Jinja2 expressions.
+  env: [{name: ANSIBLE_JINJA2_EXPR_LAZY_EVAL}]
+  ini:
+  - {key: jinja2_expr_lazy_eval, section: defaults}
+  version_added: 2.10
 DEFAULT_JINJA2_EXTENSIONS:
   name: Enabled Jinja2 extensions
   default: []
