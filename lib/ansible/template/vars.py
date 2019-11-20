@@ -19,8 +19,6 @@
 from __future__ import (absolute_import, division, print_function)
 __metaclass__ = type
 
-import re
-
 from jinja2.utils import missing
 
 from ansible.errors import AnsibleError, AnsibleUndefinedVariable
