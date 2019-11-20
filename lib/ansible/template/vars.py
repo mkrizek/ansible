@@ -21,6 +21,7 @@ __metaclass__ = type
 
 from jinja2.utils import missing
 
+from ansible import constants as C
 from ansible.errors import AnsibleError, AnsibleUndefinedVariable
 from ansible.module_utils.six import iteritems
 from ansible.module_utils._text import to_native
@@ -111,8 +112,8 @@ class AnsibleJ2Vars(Mapping):
                     # Instead of failing here prematurely, return AnsibleUndefined which will
                     # fail on the first usage allowing us to do lazy evaluation.
                     return AnsibleUndefined(hint=e, name=varname)
-                else:
-                    raise
+
+                raise
             except Exception as e:
                 msg = getattr(e, 'message', None) or to_native(e)
                 raise AnsibleError("An unhandled exception occurred while templating '%s'. "
