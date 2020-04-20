@@ -253,6 +253,9 @@ class StrategyModule(StrategyBase):
                         else:
                             new_blocks = self._load_included_file(included_file, iterator=iterator)
                     except AnsibleError as e:
+                        for r in included_file._results:
+                            r._result['failed'] = True
+
                         for host in included_file._hosts:
                             iterator.mark_host_failed(host)
                         display.warning(to_text(e))
