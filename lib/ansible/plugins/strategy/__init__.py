@@ -50,6 +50,7 @@ from ansible.playbook.task_include import TaskInclude
 from ansible.plugins import loader as plugin_loader
 from ansible.template import Templar
 from ansible.utils.display import Display
+from ansible.utils.unsafe_proxy import wrap_var
 from ansible.utils.vars import combine_vars
 from ansible.vars.clean import strip_internal_keys, module_response_deepcopy
 
@@ -71,20 +72,37 @@ class StrategySentinel:
 _sentinel = StrategySentinel()
 
 
-def post_process_whens(result, task, templar):
-
+def post_process_whens(result, task, templar, task_vars):
     cond = None
     if task.changed_when:
-        cond = Conditional(loader=templar._loader)
-        cond.when = task.changed_when
-        result['changed'] = cond.evaluate_conditional(templar, templar.available_variables)
+        with templar.set_temporary_context(available_variables=task_vars):
+            cond = Conditional(loader=templar._loader)
+            cond.when = task.changed_when
+            result['changed'] = cond.evaluate_conditional(templar, templar.available_variables)
 
     if task.failed_when:
-        if cond is None:
-            cond = Conditional(loader=templar._loader)
-        cond.when = task.failed_when
-        failed_when_result = cond.evaluate_conditional(templar, templar.available_variables)
-        result['failed_when_result'] = result['failed'] = failed_when_result
+        with templar.set_temporary_context(available_variables=task_vars):
+            if cond is None:
+                cond = Conditional(loader=templar._loader)
+            cond.when = task.failed_when
+            failed_when_result = cond.evaluate_conditional(templar, templar.available_variables)
+            result['failed_when_result'] = result['failed'] = failed_when_result
+
+
+def _get_item_vars(result, task):
+    item_vars = {}
+    if task.loop or task.loop_with:
+        loop_var = result.get('ansible_loop_var', 'item')
+        index_var = result.get('ansible_index_var')
+        if loop_var in result:
+            item_vars[loop_var] = result[loop_var]
+        if index_var and index_var in result:
+            item_vars[index_var] = result[index_var]
+        if '_ansible_item_label' in result:
+            item_vars['_ansible_item_label'] = result['_ansible_item_label']
+        if 'ansible_loop' in result:
+            item_vars['ansible_loop'] = result['ansible_loop']
+    return item_vars
 
 
 def results_thread_main(strategy):
@@ -516,6 +534,7 @@ class StrategyBase:
             original_host = get_original_host(task_result._host)
             queue_cache_entry = (original_host.name, task_result._task)
             found_task = self._queued_task_cache.get(queue_cache_entry)['task']
+            found_task_vars = self._queued_task_cache.get(queue_cache_entry)['task_vars']
             original_task = found_task.copy(exclude_parent=True, exclude_tasks=True)
             original_task._parent = found_task._parent
             original_task.from_attrs(task_result._task_fields)
@@ -533,6 +552,10 @@ class StrategyBase:
                 elif task_result.is_skipped():
                     self._tqm.send_callback('v2_runner_item_on_skipped', task_result)
                 else:
+                    if 'add_host' in task_result._result or 'add_group' in task_result._result:
+                        # we do not know the changed value for these tasks at this point
+                        # so postpone sending a callback until we actually process them later
+                        continue
                     if 'diff' in task_result._result:
                         if self._diff or getattr(original_task, 'diff', False):
                             self._tqm.send_callback('v2_on_file_diff', task_result)
@@ -658,12 +681,26 @@ class StrategyBase:
                         # this task added a new host (add_host module)
                         new_host_info = result_item.get('add_host', dict())
                         self._add_host(new_host_info, result_item)
-                        post_process_whens(result_item, original_task, handler_templar)
-
                     elif 'add_group' in result_item:
                         # this task added a new group (group_by module)
                         self._add_group(original_host, result_item)
-                        post_process_whens(result_item, original_task, handler_templar)
+
+                    if 'add_host' in result_item or 'add_group' in result_item:
+                        item_vars = _get_item_vars(result_item, original_task)
+                        if item_vars:
+                            all_task_vars = combine_vars(found_task_vars, item_vars)
+                        else:
+                            all_task_vars = found_task_vars
+                        all_task_vars[original_task.register] = wrap_var(result_item)
+                        post_process_whens(result_item, original_task, handler_templar, all_task_vars)
+                        if original_task.loop or original_task.loop_with:
+                            new_item_result = TaskResult(
+                                task_result._host,
+                                task_result._task,
+                                result_item,
+                                task_result._task_fields,
+                            )
+                            self._tqm.send_callback('v2_runner_item_on_ok', new_item_result)
 
                     if 'ansible_facts' in result_item:
                         # if delegated fact and we are delegating facts, we need to change target host for them
