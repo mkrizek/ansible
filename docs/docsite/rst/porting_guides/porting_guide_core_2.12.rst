@@ -19,7 +19,7 @@ This document is part of a collection on porting. The complete list of porting g
 Playbook
 ========
 
-No notable changes
+* To enable ``jinja2_native`` feature Jinja2 2.11 is now required (as opposed to 2.10) as it includes important bugfixes.
 
 
 Command Line
