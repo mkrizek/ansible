@@ -22,6 +22,7 @@ __metaclass__ = type
 import fnmatch
 
 from ansible import constants as C
+from ansible.errors import AnsibleAssertionError
 from ansible.module_utils.six import iteritems
 from ansible.module_utils.parsing.convert_bool import boolean
 from ansible.playbook.block import Block
@@ -102,6 +103,47 @@ class HostState:
                 return False
 
         return True
+
+    def __lt__(self, other):
+        """This is used in the linear strategy to find the "lowest" state to
+        ensure tasks are executed in lockstep. The lowest state is a HostState
+        whose next task is defined at the lowest/most nested position in a play.
+        """
+        if not isinstance(other, HostState):
+            raise AnsibleAssertionError("HostState can be compared only to another HostState, got %s" % type(other))
+
+        if self.cur_block < other.cur_block:
+            return True
+        if self.run_state < other.run_state:
+            return True
+        if self.run_state == other.run_state:
+            if self.run_state == PlayIterator.ITERATING_SETUP:
+                # if both states are in ITERATING_SETUP then they are "equal"
+                # because setup_block only has one task and no rescue/always/child_blocks
+                return False
+            elif self.run_state == PlayIterator.ITERATING_TASKS:
+                if self.cur_regular_task < other.cur_regular_task:
+                    return True
+                if self.tasks_child_state is not None and other.tasks_child_state is not None:
+                    return self.tasks_child_state < other.tasks_child_state
+                if self.tasks_child_state is not None and other.tasks_child_state is None:
+                    return True
+            elif self.run_state == PlayIterator.ITERATING_RESCUE:
+                if self.cur_rescue_task < other.cur_rescue_task:
+                    return True
+                if self.rescue_child_state is not None and other.rescue_child_state is not None:
+                    return self.rescue_child_state < other.rescue_child_state
+                if self.rescue_child_state is not None and other.rescue_child_state is None:
+                    return True
+            elif self.run_state == PlayIterator.ITERATING_ALWAYS:
+                if self.cur_always_task < other.cur_always_task:
+                    return True
+                if self.always_child_state is not None and other.always_child_state is not None:
+                    return self.always_child_state < other.always_child_state
+                if self.always_child_state is not None and other.always_child_state is None:
+                    return True
+
+        return False
 
     def get_current_block(self):
         return self._blocks[self.cur_block]

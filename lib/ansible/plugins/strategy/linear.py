@@ -86,117 +86,34 @@ class StrategyModule(StrategyBase):
         be a noop task to keep the iterator in lock step across
         all hosts.
         '''
-
         noop_task = Task()
         noop_task.action = 'meta'
         noop_task.args['_raw_params'] = 'noop'
         noop_task.implicit = True
         noop_task.set_loader(iterator._play._loader)
 
-        host_tasks = {}
+        host_tasks_to_run = []
         display.debug("building list of next tasks for hosts")
         for host in hosts:
-            host_tasks[host.name] = iterator.get_next_task_for_host(host, peek=True)
+            state, task = iterator.get_next_task_for_host(host, peek=True)
+            if task and state.run_state != PlayIterator.ITERATING_COMPLETE:
+                host_tasks_to_run.append((host, (state, task)))
         display.debug("done building task lists")
 
-        num_setups = 0
-        num_tasks = 0
-        num_rescue = 0
-        num_always = 0
+        if not host_tasks_to_run:
+            return [(host, None) for host in hosts]
 
-        display.debug("counting tasks in each state of execution")
-        host_tasks_to_run = [(host, state_task)
-                             for host, state_task in iteritems(host_tasks)
-                             if state_task and state_task[1]]
+        lowest_state = min((s for h, (s, t) in host_tasks_to_run))
 
-        if host_tasks_to_run:
-            try:
-                lowest_cur_block = min(
-                    (iterator.get_active_state(s).cur_block for h, (s, t) in host_tasks_to_run
-                     if s.run_state != PlayIterator.ITERATING_COMPLETE))
-            except ValueError:
-                lowest_cur_block = None
-        else:
-            # empty host_tasks_to_run will just run till the end of the function
-            # without ever touching lowest_cur_block
-            lowest_cur_block = None
+        rvals = []
+        for host, (state, task) in host_tasks_to_run:
+            if state == lowest_state:
+                iterator._host_states[host.name] = state
+                rvals.append((host, task))
+            else:
+                rvals.append((host, noop_task))
 
-        for (k, v) in host_tasks_to_run:
-            (s, t) = v
-
-            s = iterator.get_active_state(s)
-            if s.cur_block > lowest_cur_block:
-                # Not the current block, ignore it
-                continue
-
-            if s.run_state == PlayIterator.ITERATING_SETUP:
-                num_setups += 1
-            elif s.run_state == PlayIterator.ITERATING_TASKS:
-                num_tasks += 1
-            elif s.run_state == PlayIterator.ITERATING_RESCUE:
-                num_rescue += 1
-            elif s.run_state == PlayIterator.ITERATING_ALWAYS:
-                num_always += 1
-        display.debug("done counting tasks in each state of execution:\n\tnum_setups: %s\n\tnum_tasks: %s\n\tnum_rescue: %s\n\tnum_always: %s" % (num_setups,
-                                                                                                                                                  num_tasks,
-                                                                                                                                                  num_rescue,
-                                                                                                                                                  num_always))
-
-        def _advance_selected_hosts(hosts, cur_block, cur_state):
-            '''
-            This helper returns the task for all hosts in the requested
-            state, otherwise they get a noop dummy task. This also advances
-            the state of the host, since the given states are determined
-            while using peek=True.
-            '''
-            # we return the values in the order they were originally
-            # specified in the given hosts array
-            rvals = []
-            display.debug("starting to advance hosts")
-            for host in hosts:
-                host_state_task = host_tasks.get(host.name)
-                if host_state_task is None:
-                    continue
-                (s, t) = host_state_task
-                s = iterator.get_active_state(s)
-                if t is None:
-                    continue
-                if s.run_state == cur_state and s.cur_block == cur_block:
-                    new_t = iterator.get_next_task_for_host(host)
-                    rvals.append((host, t))
-                else:
-                    rvals.append((host, noop_task))
-            display.debug("done advancing hosts to next task")
-            return rvals
-
-        # if any hosts are in ITERATING_SETUP, return the setup task
-        # while all other hosts get a noop
-        if num_setups:
-            display.debug("advancing hosts in ITERATING_SETUP")
-            return _advance_selected_hosts(hosts, lowest_cur_block, PlayIterator.ITERATING_SETUP)
-
-        # if any hosts are in ITERATING_TASKS, return the next normal
-        # task for these hosts, while all other hosts get a noop
-        if num_tasks:
-            display.debug("advancing hosts in ITERATING_TASKS")
-            return _advance_selected_hosts(hosts, lowest_cur_block, PlayIterator.ITERATING_TASKS)
-
-        # if any hosts are in ITERATING_RESCUE, return the next rescue
-        # task for these hosts, while all other hosts get a noop
-        if num_rescue:
-            display.debug("advancing hosts in ITERATING_RESCUE")
-            return _advance_selected_hosts(hosts, lowest_cur_block, PlayIterator.ITERATING_RESCUE)
-
-        # if any hosts are in ITERATING_ALWAYS, return the next always
-        # task for these hosts, while all other hosts get a noop
-        if num_always:
-            display.debug("advancing hosts in ITERATING_ALWAYS")
-            return _advance_selected_hosts(hosts, lowest_cur_block, PlayIterator.ITERATING_ALWAYS)
-
-        # at this point, everything must be ITERATING_COMPLETE, so we
-        # return None for all hosts in the list
-        display.debug("all hosts are done, so returning None's for all hosts")
-        return [(host, None) for host in hosts]
+        return rvals
 
     def run(self, iterator, play_context):
         '''

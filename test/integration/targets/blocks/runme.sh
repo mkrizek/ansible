@@ -100,3 +100,6 @@ cat role_complete_test.out
 [ "$(grep -c 'Tagged task' role_complete_test.out)" -eq 2 ]
 [ "$(grep -c 'Not tagged task' role_complete_test.out)" -eq 0 ]
 rm -f role_complete_test.out
+
+# https://github.com/ansible/ansible/issues/72725
+ansible-playbook -i host1,host2 -v 72725.yml
