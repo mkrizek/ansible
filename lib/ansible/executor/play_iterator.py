@@ -104,6 +104,10 @@ class HostState:
 
         return True
 
+    def __ne__(self, other):
+        # This is required only for Python 2
+        return not self == other
+
     def __lt__(self, other):
         """This is used in the linear strategy to find the "lowest" state to
         ensure tasks are executed in lockstep. The lowest state is a HostState
