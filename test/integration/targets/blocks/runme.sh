@@ -100,3 +100,12 @@ cat role_complete_test.out
 [ "$(grep -c 'Tagged task' role_complete_test.out)" -eq 2 ]
 [ "$(grep -c 'Not tagged task' role_complete_test.out)" -eq 0 ]
 rm -f role_complete_test.out
+
+# https://github.com/ansible/ansible/issues/43191
+ansible-playbook always_outer_rescue.yml > always_outer_rescue_test.out
+cat always_outer_rescue_test.out
+[ "$(grep -c 'rescued=1' always_outer_rescue_test.out)" -eq 1 ]
+[ "$(grep -c 'failed=0' always_outer_rescue_test.out)" -eq 1 ]
+[ "$(grep -c 'VARIABLE IS NOT DEFINED!' always_outer_rescue_test.out)" -eq 0 ]
+[ "$(grep -c 'ansible_failed_task works' always_outer_rescue_test.out)" -eq 1 ]
+rm -f always_outer_rescue_test.out
