@@ -35,6 +35,7 @@ import time
 
 from ansible import constants as C
 from ansible.errors import AnsibleError
+from ansible.playbook.handler import Handler
 from ansible.playbook.included_file import IncludedFile
 from ansible.plugins.loader import action_loader
 from ansible.plugins.strategy import StrategyBase
@@ -49,20 +50,6 @@ class StrategyModule(StrategyBase):
 
     # This strategy manages throttling on its own, so we don't want it done in queue_task
     ALLOW_BASE_THROTTLING = False
-
-    def _filter_notified_failed_hosts(self, iterator, notified_hosts):
-
-        # If --force-handlers is used we may act on hosts that have failed
-        return [host for host in notified_hosts if iterator.is_failed(host)]
-
-    def _filter_notified_hosts(self, notified_hosts):
-        '''
-        Filter notified hosts accordingly to strategy
-        '''
-
-        # We act only on hosts that are ready to flush handlers
-        return [host for host in notified_hosts
-                if host in self._flushed_hosts and self._flushed_hosts[host]]
 
     def __init__(self, tqm):
         super(StrategyModule, self).__init__(tqm)
@@ -184,7 +171,7 @@ class StrategyModule(StrategyBase):
 
                         # check to see if this task should be skipped, due to it being a member of a
                         # role which has already run (and whether that role allows duplicate execution)
-                        if task._role and task._role.has_run(host):
+                        if not isinstance(task, Handler) and task._role and task._role.has_run(host):
                             # If there is no metadata, the default behavior is to not allow duplicates,
                             # if there is metadata, check to see if the allow_duplicates flag was set to true
                             if task._role._metadata is None or task._role._metadata and not task._role._metadata.allow_duplicates:
@@ -201,7 +188,10 @@ class StrategyModule(StrategyBase):
                                 if task.any_errors_fatal:
                                     display.warning("Using any_errors_fatal with the free strategy is not supported, "
                                                     "as tasks are executed independently on each host")
-                                self._tqm.send_callback('v2_playbook_on_task_start', task, is_conditional=False)
+                                if isinstance(task, Handler):
+                                    self._tqm.send_callback('v2_playbook_on_handler_task_start', task)
+                                else:
+                                    self._tqm.send_callback('v2_playbook_on_task_start', task, is_conditional=False)
                                 self._queue_task(host, task, task_vars, play_context)
                                 # each task is counted as a worker being busy
                                 workers_free -= 1
@@ -254,6 +244,7 @@ class StrategyModule(StrategyBase):
                                 loader=self._loader,
                             )
                         else:
+                            # FIXME support handlers
                             new_blocks = self._load_included_file(included_file, iterator=iterator)
                     except AnsibleError as e:
                         for host in included_file._hosts:

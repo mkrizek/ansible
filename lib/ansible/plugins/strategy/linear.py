@@ -37,6 +37,7 @@ from ansible.executor.play_iterator import PlayIterator
 from ansible.module_utils.six import iteritems
 from ansible.module_utils._text import to_text
 from ansible.playbook.block import Block
+from ansible.playbook.handler import Handler
 from ansible.playbook.included_file import IncludedFile
 from ansible.playbook.task import Task
 from ansible.plugins.loader import action_loader
@@ -103,6 +104,7 @@ class StrategyModule(StrategyBase):
         num_tasks = 0
         num_rescue = 0
         num_always = 0
+        num_handlers = 0
 
         display.debug("counting tasks in each state of execution")
         host_tasks_to_run = [(host, state_task)
@@ -137,6 +139,8 @@ class StrategyModule(StrategyBase):
                 num_rescue += 1
             elif s.run_state == PlayIterator.ITERATING_ALWAYS:
                 num_always += 1
+            elif s.run_state == PlayIterator.ITERATING_HANDLERS:
+                num_handlers += 1
         display.debug("done counting tasks in each state of execution:\n\tnum_setups: %s\n\tnum_tasks: %s\n\tnum_rescue: %s\n\tnum_always: %s" % (num_setups,
                                                                                                                                                   num_tasks,
                                                                                                                                                   num_rescue,
@@ -193,6 +197,10 @@ class StrategyModule(StrategyBase):
             display.debug("advancing hosts in ITERATING_ALWAYS")
             return _advance_selected_hosts(hosts, lowest_cur_block, PlayIterator.ITERATING_ALWAYS)
 
+        if num_handlers:
+            display.debug("advancing hosts in ITERATING_HANDLERS")
+            return _advance_selected_hosts(hosts, lowest_cur_block, PlayIterator.ITERATING_HANDLERS)
+
         # at this point, everything must be ITERATING_COMPLETE, so we
         # return None for all hosts in the list
         display.debug("all hosts are done, so returning None's for all hosts")
@@ -245,7 +253,7 @@ class StrategyModule(StrategyBase):
 
                     # check to see if this task should be skipped, due to it being a member of a
                     # role which has already run (and whether that role allows duplicate execution)
-                    if task._role and task._role.has_run(host):
+                    if not isinstance(task, Handler) and task._role and task._role.has_run(host):
                         # If there is no metadata, the default behavior is to not allow duplicates,
                         # if there is metadata, check to see if the allow_duplicates flag was set to true
                         if task._role._metadata is None or task._role._metadata and not task._role._metadata.allow_duplicates:
@@ -306,7 +314,10 @@ class StrategyModule(StrategyBase):
                                 # we don't care if it just shows the raw name
                                 display.debug("templating failed for some reason")
                             display.debug("here goes the callback...")
-                            self._tqm.send_callback('v2_playbook_on_task_start', task, is_conditional=False)
+                            if isinstance(task, Handler):
+                                self._tqm.send_callback('v2_playbook_on_handler_task_start', task)
+                            else:
+                                self._tqm.send_callback('v2_playbook_on_task_start', task, is_conditional=False)
                             task.name = saved_name
                             callback_sent = True
                             display.debug("sending task start callback")
@@ -340,7 +351,6 @@ class StrategyModule(StrategyBase):
                     variable_manager=self._variable_manager
                 )
 
-                include_failure = False
                 if len(included_files) > 0:
                     display.debug("we have included files to process")
 
@@ -361,7 +371,20 @@ class StrategyModule(StrategyBase):
                                     loader=self._loader,
                                 )
                             else:
-                                new_blocks = self._load_included_file(included_file, iterator=iterator)
+                                if isinstance(task, Handler):
+                                    new_blocks = self._load_included_file(included_file, iterator=iterator, is_handler=True)
+                                    # for every task in each block brought in by the include, add the list
+                                    # of hosts which included the file to the notified_handlers dict
+                                    for block in new_blocks:
+                                        # TODO filter tags
+                                        iterator._play.handlers.append(block)
+                                        for included_handler_task in block.block:
+                                            display.debug("adding task '%s' included in handler '%s'" % (included_handler_task.get_name(), task.get_name()))
+                                            for host in included_file._hosts:
+                                                iterator.add_handler(host, included_handler_task)
+                                    continue
+                                else:
+                                    new_blocks = self._load_included_file(included_file, iterator=iterator)
 
                             display.debug("iterating over new_blocks loaded from include file")
                             for new_block in new_blocks:
@@ -389,17 +412,18 @@ class StrategyModule(StrategyBase):
                                 self._tqm._failed_hosts[host.name] = True
                                 iterator.mark_host_failed(host)
                             display.error(to_text(e), wrap_text=False)
-                            include_failure = True
                             continue
 
-                    # finally go through all of the hosts and append the
-                    # accumulated blocks to their list of tasks
-                    display.debug("extending task lists for all hosts with included blocks")
+                    if not isinstance(task, Handler):
+                        # finally go through all of the hosts and append the
+                        # accumulated blocks to their list of tasks
+                        display.debug("extending task lists for all hosts with included blocks")
 
-                    for host in hosts_left:
-                        iterator.add_tasks(host, all_blocks[host])
+                        for host in hosts_left:
+                            iterator.add_tasks(host, all_blocks[host])
 
-                    display.debug("done extending task lists")
+                        display.debug("done extending task lists")
+
                     display.debug("done processing included files")
 
                 display.debug("results queue empty")

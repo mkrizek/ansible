@@ -309,6 +309,7 @@ def load_list_of_tasks(ds, play, block=None, role=None, task_include=None, use_h
                     #        right now because they don't iterate blocks correctly
                     if use_handlers:
                         for b in included_blocks:
+                            # FIXME note to self handlers blocks
                             task_list.extend(b.block)
                     else:
                         task_list.extend(included_blocks)

@@ -22,9 +22,11 @@ __metaclass__ = type
 import fnmatch
 
 from ansible import constants as C
+from ansible.errors import AnsibleAssertionError
 from ansible.module_utils.six import iteritems
 from ansible.module_utils.parsing.convert_bool import boolean
 from ansible.playbook.block import Block
+from ansible.playbook.handler import Handler
 from ansible.playbook.task import Task
 from ansible.utils.display import Display
 
@@ -38,11 +40,15 @@ __all__ = ['PlayIterator']
 class HostState:
     def __init__(self, blocks):
         self._blocks = blocks[:]
+        self._handlers = []
+
+        self.pre_flushing_run_state = None
 
         self.cur_block = 0
         self.cur_regular_task = 0
         self.cur_rescue_task = 0
         self.cur_always_task = 0
+        self.cur_handlers_task = 0
         self.cur_dep_chain = None
         self.run_state = PlayIterator.ITERATING_SETUP
         self.fail_state = PlayIterator.FAILED_NONE
@@ -58,26 +64,27 @@ class HostState:
 
     def __str__(self):
         def _run_state_to_string(n):
-            states = ["ITERATING_SETUP", "ITERATING_TASKS", "ITERATING_RESCUE", "ITERATING_ALWAYS", "ITERATING_COMPLETE"]
+            states = ["ITERATING_SETUP", "ITERATING_TASKS", "ITERATING_RESCUE", "ITERATING_ALWAYS", "ITERATING_HANDLERS", "ITERATING_COMPLETE"]
             try:
                 return states[n]
             except IndexError:
                 return "UNKNOWN STATE"
 
         def _failed_state_to_string(n):
-            states = {1: "FAILED_SETUP", 2: "FAILED_TASKS", 4: "FAILED_RESCUE", 8: "FAILED_ALWAYS"}
+            states = {1: "FAILED_SETUP", 2: "FAILED_TASKS", 4: "FAILED_RESCUE", 8: "FAILED_ALWAYS", 16: "FAILED_HANDLERS"}
             if n == 0:
                 return "FAILED_NONE"
             else:
                 ret = []
-                for i in (1, 2, 4, 8):
+                for i in (1, 2, 4, 8, 16):
                     if n & i:
                         ret.append(states[i])
                 return "|".join(ret)
 
-        return ("HOST STATE: block=%d, task=%d, rescue=%d, always=%d, run_state=%s, fail_state=%s, pending_setup=%s, tasks child state? (%s), "
+        return ("HOST STATE: block=%d, handlers=%s task=%d, rescue=%d, always=%d, run_state=%s, fail_state=%s, pending_setup=%s, tasks child state? (%s), "
                 "rescue child state? (%s), always child state? (%s), did rescue? %s, did start at task? %s" % (
                     self.cur_block,
+                    self._handlers,
                     self.cur_regular_task,
                     self.cur_rescue_task,
                     self.cur_always_task,
@@ -108,10 +115,13 @@ class HostState:
 
     def copy(self):
         new_state = HostState(self._blocks)
+        new_state._handlers = self._handlers[:]
+        new_state.pre_flushing_run_state = self.pre_flushing_run_state
         new_state.cur_block = self.cur_block
         new_state.cur_regular_task = self.cur_regular_task
         new_state.cur_rescue_task = self.cur_rescue_task
         new_state.cur_always_task = self.cur_always_task
+        new_state.cur_handlers_task = self.cur_handlers_task
         new_state.run_state = self.run_state
         new_state.fail_state = self.fail_state
         new_state.pending_setup = self.pending_setup
@@ -135,7 +145,8 @@ class PlayIterator:
     ITERATING_TASKS = 1
     ITERATING_RESCUE = 2
     ITERATING_ALWAYS = 3
-    ITERATING_COMPLETE = 4
+    ITERATING_HANDLERS = 4
+    ITERATING_COMPLETE = 5
 
     # the failure states for the play iteration, which are powers
     # of 2 as they may be or'ed together in certain circumstances
@@ -144,6 +155,7 @@ class PlayIterator:
     FAILED_TASKS = 2
     FAILED_RESCUE = 4
     FAILED_ALWAYS = 8
+    FAILED_HANDLERS = 16
 
     def __init__(self, inventory, play, play_context, variable_manager, all_vars, start_at_done=False):
         self._play = play
@@ -305,6 +317,7 @@ class PlayIterator:
                         state.cur_regular_task = 0
                         state.cur_rescue_task = 0
                         state.cur_always_task = 0
+                        state.cur_handlers_task = 0
                         state.tasks_child_state = None
                         state.rescue_child_state = None
                         state.always_child_state = None
@@ -406,6 +419,7 @@ class PlayIterator:
                             state.cur_regular_task = 0
                             state.cur_rescue_task = 0
                             state.cur_always_task = 0
+                            state.cur_handlers_task = 0
                             state.run_state = self.ITERATING_TASKS
                             state.tasks_child_state = None
                             state.rescue_child_state = None
@@ -418,6 +432,21 @@ class PlayIterator:
                             state.always_child_state.run_state = self.ITERATING_TASKS
                             task = None
                         state.cur_always_task += 1
+
+            elif state.run_state == self.ITERATING_HANDLERS:
+                if state.cur_handlers_task >= len(state._handlers):
+                    state._handlers = []
+                    state.cur_handlers_task = 0
+                    if state.fail_state != self.FAILED_NONE:
+                        state.run_state = self.ITERATING_COMPLETE
+                    else:
+                        state.run_state = state.pre_flushing_run_state
+                else:
+                    task = state._handlers[state.cur_handlers_task]
+                    if not isinstance(task, Handler):
+                        # TODO blocks as handlers
+                        raise AnsibleAssertionError("Handlers need to be of type Handler")
+                    state.cur_handlers_task += 1
 
             elif state.run_state == self.ITERATING_COMPLETE:
                 return (state, None)
@@ -441,7 +470,10 @@ class PlayIterator:
                     state.run_state = self.ITERATING_RESCUE
                 elif state._blocks[state.cur_block].always:
                     state.run_state = self.ITERATING_ALWAYS
+                elif state._handlers and self._play.force_handlers:
+                    state.run_state = self.ITERATING_HANDLERS
                 else:
+                    state._handlers = []
                     state.run_state = self.ITERATING_COMPLETE
         elif state.run_state == self.ITERATING_RESCUE:
             if state.rescue_child_state is not None:
@@ -450,14 +482,25 @@ class PlayIterator:
                 state.fail_state |= self.FAILED_RESCUE
                 if state._blocks[state.cur_block].always:
                     state.run_state = self.ITERATING_ALWAYS
+                elif state._handlers and self._play.force_handlers:
+                    state.run_state = self.ITERATING_HANDLERS
                 else:
+                    state._handlers = []
                     state.run_state = self.ITERATING_COMPLETE
         elif state.run_state == self.ITERATING_ALWAYS:
             if state.always_child_state is not None:
                 state.always_child_state = self._set_failed_state(state.always_child_state)
             else:
                 state.fail_state |= self.FAILED_ALWAYS
-                state.run_state = self.ITERATING_COMPLETE
+                if state._handlers and self._play.force_handlers:
+                    state.run_state = self.ITERATING_HANDLERS
+                else:
+                    state._handlers = []
+                    state.run_state = self.ITERATING_COMPLETE
+        elif state.run_state == self.ITERATING_HANDLERS:
+            state._handlers = []
+            state.fail_state |= self.FAILED_HANDLERS
+            state.run_state = self.ITERATING_COMPLETE
         return state
 
     def mark_host_failed(self, host):
@@ -560,3 +603,10 @@ class PlayIterator:
 
     def add_tasks(self, host, task_list):
         self._host_states[host.name] = self._insert_tasks_into_state(self.get_host_state(host), task_list)
+
+    def add_handler(self, host, handler):
+        # TODO filter tags to allow tags on handlers
+        if handler not in self._host_states[host.name]._handlers:
+            self._host_states[host.name]._handlers.append(handler)
+            return True
+        return False

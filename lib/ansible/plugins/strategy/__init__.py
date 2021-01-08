@@ -102,13 +102,7 @@ def results_thread_main(strategy):
             elif isinstance(result, TaskResult):
                 strategy.normalize_task_result(result)
                 with strategy._results_lock:
-                    # only handlers have the listen attr, so this must be a handler
-                    # we split up the results into two queues here to make sure
-                    # handler and regular result processing don't cross wires
-                    if 'listen' in result._task_fields:
-                        strategy._handler_results.append(result)
-                    else:
-                        strategy._results.append(result)
+                    strategy._results.append(result)
             else:
                 display.warning('Received an invalid object (%s) in the result queue: %r' % (type(result), result))
         except (IOError, EOFError):
@@ -120,7 +114,7 @@ def results_thread_main(strategy):
 def debug_closure(func):
     """Closure to wrap ``StrategyBase._process_pending_results`` and invoke the task debugger"""
     @functools.wraps(func)
-    def inner(self, iterator, one_pass=False, max_passes=None, do_handlers=False):
+    def inner(self, iterator, one_pass=False, max_passes=None):
         status_to_stats_map = (
             ('is_failed', 'failures'),
             ('is_unreachable', 'dark'),
@@ -131,7 +125,7 @@ def debug_closure(func):
         # We don't know the host yet, copy the previous states, for lookup after we process new results
         prev_host_states = iterator._host_states.copy()
 
-        results = func(self, iterator, one_pass=one_pass, max_passes=max_passes, do_handlers=do_handlers)
+        results = func(self, iterator, one_pass=one_pass, max_passes=max_passes)
         _processed_results = []
 
         for result in results:
@@ -210,19 +204,13 @@ class StrategyBase:
 
         # internal counters
         self._pending_results = 0
-        self._pending_handler_results = 0
         self._cur_worker = 0
 
         # this dictionary is used to keep track of hosts that have
         # outstanding tasks still in queue
         self._blocked_hosts = dict()
 
-        # this dictionary is used to keep track of hosts that have
-        # flushed handlers
-        self._flushed_hosts = dict()
-
         self._results = deque()
-        self._handler_results = deque()
         self._results_lock = threading.Condition(threading.Lock())
 
         # create the result processing thread for reading results in the background
@@ -274,7 +262,6 @@ class StrategyBase:
         # make sure that all of the hosts are advanced to their final task.
         # This should be safe, as everything should be ITERATING_COMPLETE by
         # this point, though the strategy may not advance the hosts itself.
-
         for host in self._hosts_cache:
             if host not in self._tqm._unreachable_hosts:
                 try:
@@ -282,29 +269,12 @@ class StrategyBase:
                 except KeyError:
                     iterator.get_next_task_for_host(self._inventory.get_host(host))
 
-        # save the failed/unreachable hosts, as the run_handlers()
-        # method will clear that information during its execution
-        failed_hosts = iterator.get_failed_hosts()
-        unreachable_hosts = self._tqm._unreachable_hosts.keys()
-
-        display.debug("running handlers")
-        handler_result = self.run_handlers(iterator, play_context)
-        if isinstance(handler_result, bool) and not handler_result:
-            result |= self._tqm.RUN_ERROR
-        elif not handler_result:
-            result |= handler_result
-
-        # now update with the hosts (if any) that failed or were
-        # unreachable during the handler execution phase
-        failed_hosts = set(failed_hosts).union(iterator.get_failed_hosts())
-        unreachable_hosts = set(unreachable_hosts).union(self._tqm._unreachable_hosts.keys())
-
         # return the appropriate code, depending on the status hosts after the run
         if not isinstance(result, bool) and result != self._tqm.RUN_OK:
             return result
-        elif len(unreachable_hosts) > 0:
+        elif len(self._tqm._unreachable_hosts.keys()) > 0:
             return self._tqm.RUN_UNREACHABLE_HOSTS
-        elif len(failed_hosts) > 0:
+        elif len(iterator.get_failed_hosts()) > 0:
             return self._tqm.RUN_FAILED_HOSTS
         else:
             return self._tqm.RUN_OK
@@ -335,8 +305,8 @@ class StrategyBase:
         # Maybe this should be added somewhere further up the call stack but
         # this is the earliest in the code where we have task (1) extracted
         # into its own variable and (2) there's only a single code path
-        # leading to the module being run.  This is called by three
-        # functions: __init__.py::_do_handler_run(), linear.py::run(), and
+        # leading to the module being run.  This is called by two
+        # functions: linear.py::run(), and
         # free.py::run() so we'd have to add to all three to do it there.
         # The next common higher level is __init__.py::run() and that has
         # tasks inside of play_iterator so we'd have to extract them to do it
@@ -402,10 +372,7 @@ class StrategyBase:
                 elif self._cur_worker == starting_worker:
                     time.sleep(0.0001)
 
-            if isinstance(task, Handler):
-                self._pending_handler_results += 1
-            else:
-                self._pending_results += 1
+            self._pending_results += 1
         except (EOFError, IOError, AssertionError) as e:
             # most likely an abort
             display.debug("got an error while queuing: %s" % e)
@@ -477,12 +444,11 @@ class StrategyBase:
         return task_result
 
     @debug_closure
-    def _process_pending_results(self, iterator, one_pass=False, max_passes=None, do_handlers=False):
+    def _process_pending_results(self, iterator, one_pass=False, max_passes=None):
         '''
         Reads results off the final queue and takes appropriate action
         based on the result (executing callbacks, updating state, etc.).
         '''
-
         ret_results = []
         handler_templar = Templar(self._loader)
 
@@ -525,10 +491,7 @@ class StrategyBase:
         while True:
             try:
                 self._results_lock.acquire()
-                if do_handlers:
-                    task_result = self._handler_results.popleft()
-                else:
-                    task_result = self._results.popleft()
+                task_result = self._results.popleft()
             except IndexError:
                 break
             finally:
@@ -623,7 +586,7 @@ class StrategyBase:
                                 target_handler = search_handler_blocks_by_name(handler_name, iterator._play.handlers)
                                 if target_handler is not None:
                                     found = True
-                                    if target_handler.notify_host(original_host):
+                                    if iterator.add_handler(original_host, target_handler):
                                         self._tqm.send_callback('v2_playbook_on_notify', target_handler, original_host)
 
                                 for listening_handler_block in iterator._play.handlers:
@@ -640,7 +603,7 @@ class StrategyBase:
                                         else:
                                             found = True
 
-                                        if listening_handler.notify_host(original_host):
+                                        if iterator.add_handler(original_host, listening_handler):
                                             self._tqm.send_callback('v2_playbook_on_notify', listening_handler, original_host)
 
                                 # and if none were found, then we raise an error
@@ -732,10 +695,7 @@ class StrategyBase:
                 for target_host in host_list:
                     self._variable_manager.set_nonpersistent_facts(target_host, {original_task.register: clean_copy})
 
-            if do_handlers:
-                self._pending_handler_results -= 1
-            else:
-                self._pending_results -= 1
+            self._pending_results -= 1
             if original_host.name in self._blocked_hosts:
                 del self._blocked_hosts[original_host.name]
 
@@ -754,35 +714,6 @@ class StrategyBase:
                 break
 
             cur_pass += 1
-
-        return ret_results
-
-    def _wait_on_handler_results(self, iterator, handler, notified_hosts):
-        '''
-        Wait for the handler tasks to complete, using a short sleep
-        between checks to ensure we don't spin lock
-        '''
-
-        ret_results = []
-        handler_results = 0
-
-        display.debug("waiting for handler results...")
-        while (self._pending_handler_results > 0 and
-               handler_results < len(notified_hosts) and
-               not self._tqm._terminated):
-
-            if self._tqm.has_dead_workers():
-                raise AnsibleError("A worker was found in a dead state")
-
-            results = self._process_pending_results(iterator, do_handlers=True)
-            ret_results.extend(results)
-            handler_results += len([
-                r._host for r in results if r._host in notified_hosts and
-                r.task_name == handler.name])
-            if self._pending_handler_results > 0:
-                time.sleep(C.DEFAULT_INTERNAL_POLL_INTERVAL)
-
-        display.debug("no more pending handlers, returning what we have")
 
         return ret_results
 
@@ -913,7 +844,6 @@ class StrategyBase:
         '''
         Loads an included YAML file of tasks, applying the optional set of variables.
         '''
-
         display.debug("loading included file: %s" % included_file._filename)
         try:
             data = self._loader.load_from_file(included_file._filename)
@@ -974,126 +904,6 @@ class StrategyBase:
         display.debug("done processing included file")
         return block_list
 
-    def run_handlers(self, iterator, play_context):
-        '''
-        Runs handlers on those hosts which have been notified.
-        '''
-
-        result = self._tqm.RUN_OK
-
-        for handler_block in iterator._play.handlers:
-            # FIXME: handlers need to support the rescue/always portions of blocks too,
-            #        but this may take some work in the iterator and gets tricky when
-            #        we consider the ability of meta tasks to flush handlers
-            for handler in handler_block.block:
-                if handler.notified_hosts:
-                    result = self._do_handler_run(handler, handler.get_name(), iterator=iterator, play_context=play_context)
-                    if not result:
-                        break
-        return result
-
-    def _do_handler_run(self, handler, handler_name, iterator, play_context, notified_hosts=None):
-
-        # FIXME: need to use iterator.get_failed_hosts() instead?
-        # if not len(self.get_hosts_remaining(iterator._play)):
-        #     self._tqm.send_callback('v2_playbook_on_no_hosts_remaining')
-        #     result = False
-        #     break
-        if notified_hosts is None:
-            notified_hosts = handler.notified_hosts[:]
-
-        # strategy plugins that filter hosts need access to the iterator to identify failed hosts
-        failed_hosts = self._filter_notified_failed_hosts(iterator, notified_hosts)
-        notified_hosts = self._filter_notified_hosts(notified_hosts)
-        notified_hosts += failed_hosts
-
-        if len(notified_hosts) > 0:
-            self._tqm.send_callback('v2_playbook_on_handler_task_start', handler)
-
-        bypass_host_loop = False
-        try:
-            action = plugin_loader.action_loader.get(handler.action, class_only=True, collection_list=handler.collections)
-            if getattr(action, 'BYPASS_HOST_LOOP', False):
-                bypass_host_loop = True
-        except KeyError:
-            # we don't care here, because the action may simply not have a
-            # corresponding action plugin
-            pass
-
-        host_results = []
-        for host in notified_hosts:
-            if not iterator.is_failed(host) or iterator._play.force_handlers:
-                task_vars = self._variable_manager.get_vars(play=iterator._play, host=host, task=handler,
-                                                            _hosts=self._hosts_cache, _hosts_all=self._hosts_cache_all)
-                self.add_tqm_variables(task_vars, play=iterator._play)
-                templar = Templar(loader=self._loader, variables=task_vars)
-                if not handler.cached_name:
-                    handler.name = templar.template(handler.name)
-                    handler.cached_name = True
-
-                self._queue_task(host, handler, task_vars, play_context)
-
-                if templar.template(handler.run_once) or bypass_host_loop:
-                    break
-
-        # collect the results from the handler run
-        host_results = self._wait_on_handler_results(iterator, handler, notified_hosts)
-
-        included_files = IncludedFile.process_include_results(
-            host_results,
-            iterator=iterator,
-            loader=self._loader,
-            variable_manager=self._variable_manager
-        )
-
-        result = True
-        if len(included_files) > 0:
-            for included_file in included_files:
-                try:
-                    new_blocks = self._load_included_file(included_file, iterator=iterator, is_handler=True)
-                    # for every task in each block brought in by the include, add the list
-                    # of hosts which included the file to the notified_handlers dict
-                    for block in new_blocks:
-                        iterator._play.handlers.append(block)
-                        for task in block.block:
-                            task_name = task.get_name()
-                            display.debug("adding task '%s' included in handler '%s'" % (task_name, handler_name))
-                            task.notified_hosts = included_file._hosts[:]
-                            result = self._do_handler_run(
-                                handler=task,
-                                handler_name=task_name,
-                                iterator=iterator,
-                                play_context=play_context,
-                                notified_hosts=included_file._hosts[:],
-                            )
-                            if not result:
-                                break
-                except AnsibleError as e:
-                    for host in included_file._hosts:
-                        iterator.mark_host_failed(host)
-                        self._tqm._failed_hosts[host.name] = True
-                    display.warning(to_text(e))
-                    continue
-
-        # remove hosts from notification list
-        handler.notified_hosts = [
-            h for h in handler.notified_hosts
-            if h not in notified_hosts]
-        display.debug("done running handlers, result is: %s" % result)
-        return result
-
-    def _filter_notified_failed_hosts(self, iterator, notified_hosts):
-        return []
-
-    def _filter_notified_hosts(self, notified_hosts):
-        '''
-        Filter notified hosts accordingly to strategy
-        '''
-
-        # As main strategy is linear, we do not filter hosts
-        # We return a copy to avoid race conditions
-        return notified_hosts[:]
-
     def _take_step(self, task, host=None):
 
         ret = False
@@ -1144,9 +954,15 @@ class StrategyBase:
         if meta_action == 'noop':
             msg = "noop"
         elif meta_action == 'flush_handlers':
-            self._flushed_hosts[target_host] = True
-            self.run_handlers(iterator, play_context)
-            self._flushed_hosts[target_host] = False
+            # FIXME push down to specific strategy
+            if self._load_name == 'free':
+                iterator._host_states[target_host.name].pre_flushing_run_state = iterator._host_states[target_host.name].run_state
+                iterator._host_states[target_host.name].run_state = iterator.ITERATING_HANDLERS
+            else:
+                for host in self._inventory.get_hosts(iterator._play.hosts):
+                    if host.name not in self._tqm._unreachable_hosts and iterator._host_states[host.name].run_state != iterator.ITERATING_COMPLETE:  # FIXME
+                        iterator._host_states[host.name].pre_flushing_run_state = iterator._host_states[host.name].run_state
+                        iterator._host_states[host.name].run_state = iterator.ITERATING_HANDLERS
             msg = "ran handlers"
         elif meta_action == 'refresh_inventory':
             self._inventory.refresh_inventory()
@@ -1175,6 +991,7 @@ class StrategyBase:
             if _evaluate_conditional(target_host):
                 for host in self._inventory.get_hosts(iterator._play.hosts):
                     if host.name not in self._tqm._unreachable_hosts:
+                        # FIXME ITERATING_HANDLERS when force_handlers?
                         iterator._host_states[host.name].run_state = iterator.ITERATING_COMPLETE
                 msg = "ending play"
             else:
@@ -1182,6 +999,7 @@ class StrategyBase:
                 skip_reason += ', continuing play'
         elif meta_action == 'end_host':
             if _evaluate_conditional(target_host):
+                # FIXME ITERATING_HANDLERS when force_handlers?
                 iterator._host_states[target_host.name].run_state = iterator.ITERATING_COMPLETE
                 iterator._play._removed_hosts.append(target_host.name)
                 msg = "ending play for %s" % target_host.name
