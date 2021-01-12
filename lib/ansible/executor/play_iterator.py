@@ -64,6 +64,9 @@ class HostState:
     def __str__(self):
         def _run_state_to_string(n):
             states = ["ITERATING_SETUP", "ITERATING_TASKS", "ITERATING_RESCUE", "ITERATING_ALWAYS", "ITERATING_HANDLERS", "ITERATING_COMPLETE"]
+            if n is None:
+                # pre_flushing_run_state
+                return "Not flushing handlers"
             try:
                 return states[n]
             except IndexError:
