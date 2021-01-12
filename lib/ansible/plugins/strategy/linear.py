@@ -379,7 +379,9 @@ class StrategyModule(StrategyBase):
                                         # TODO filter tags
                                         iterator._play.handlers.append(block)
                                         for included_handler_task in block.block:
-                                            display.debug("adding task '%s' included in handler '%s'" % (included_handler_task.get_name(), included_file._task.get_name()))
+                                            display.debug(
+                                                "adding task '%s' included in handler '%s'" % (included_handler_task.get_name(), included_file._task.get_name())
+                                            )
                                             for host in included_file._hosts:
                                                 iterator.add_handler(host, included_handler_task)
                                     continue
