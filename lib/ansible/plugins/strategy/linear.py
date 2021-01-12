@@ -371,7 +371,7 @@ class StrategyModule(StrategyBase):
                                     loader=self._loader,
                                 )
                             else:
-                                if isinstance(task, Handler):
+                                if isinstance(included_file._task, Handler):
                                     new_blocks = self._load_included_file(included_file, iterator=iterator, is_handler=True)
                                     # for every task in each block brought in by the include, add the list
                                     # of hosts which included the file to the notified_handlers dict
@@ -379,7 +379,7 @@ class StrategyModule(StrategyBase):
                                         # TODO filter tags
                                         iterator._play.handlers.append(block)
                                         for included_handler_task in block.block:
-                                            display.debug("adding task '%s' included in handler '%s'" % (included_handler_task.get_name(), task.get_name()))
+                                            display.debug("adding task '%s' included in handler '%s'" % (included_handler_task.get_name(), included_file._task.get_name()))
                                             for host in included_file._hosts:
                                                 iterator.add_handler(host, included_handler_task)
                                     continue
@@ -414,16 +414,14 @@ class StrategyModule(StrategyBase):
                             display.error(to_text(e), wrap_text=False)
                             continue
 
-                    if not isinstance(task, Handler):
-                        # finally go through all of the hosts and append the
-                        # accumulated blocks to their list of tasks
-                        display.debug("extending task lists for all hosts with included blocks")
+                    # finally go through all of the hosts and append the
+                    # accumulated blocks to their list of tasks
+                    display.debug("extending task lists for all hosts with included blocks")
 
-                        for host in hosts_left:
-                            iterator.add_tasks(host, all_blocks[host])
+                    for host in hosts_left:
+                        iterator.add_tasks(host, all_blocks[host])
 
-                        display.debug("done extending task lists")
-
+                    display.debug("done extending task lists")
                     display.debug("done processing included files")
 
                 display.debug("results queue empty")

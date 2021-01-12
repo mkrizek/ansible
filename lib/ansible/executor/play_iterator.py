@@ -42,8 +42,6 @@ class HostState:
         self._blocks = blocks[:]
         self._handlers = []
 
-        self.pre_flushing_run_state = None
-
         self.cur_block = 0
         self.cur_regular_task = 0
         self.cur_rescue_task = 0
@@ -52,6 +50,7 @@ class HostState:
         self.cur_dep_chain = None
         self.run_state = PlayIterator.ITERATING_SETUP
         self.fail_state = PlayIterator.FAILED_NONE
+        self.pre_flushing_run_state = None
         self.pending_setup = False
         self.tasks_child_state = None
         self.rescue_child_state = None
@@ -60,7 +59,7 @@ class HostState:
         self.did_start_at_task = False
 
     def __repr__(self):
-        return "HostState(%r)" % self._blocks
+        return "HostState(%r, %r)" % (self._blocks, self._handlers)
 
     def __str__(self):
         def _run_state_to_string(n):
@@ -81,15 +80,16 @@ class HostState:
                         ret.append(states[i])
                 return "|".join(ret)
 
-        return ("HOST STATE: block=%d, handlers=%s task=%d, rescue=%d, always=%d, run_state=%s, fail_state=%s, pending_setup=%s, tasks child state? (%s), "
-                "rescue child state? (%s), always child state? (%s), did rescue? %s, did start at task? %s" % (
+        return ("HOST STATE: block=%d, task=%d, rescue=%d, always=%d, handlers=%d, run_state=%s, fail_state=%s, handlers_run_state=%s, pending_setup=%s, "
+                "tasks child state? (%s), rescue child state? (%s), always child state? (%s), did rescue? %s, did start at task? %s" % (
                     self.cur_block,
-                    self._handlers,
                     self.cur_regular_task,
                     self.cur_rescue_task,
                     self.cur_always_task,
+                    self.cur_handlers_task,
                     _run_state_to_string(self.run_state),
                     _failed_state_to_string(self.fail_state),
+                    _run_state_to_string(self.pre_flushing_run_state),
                     self.pending_setup,
                     self.tasks_child_state,
                     self.rescue_child_state,
@@ -102,8 +102,9 @@ class HostState:
         if not isinstance(other, HostState):
             return False
 
-        for attr in ('_blocks', 'cur_block', 'cur_regular_task', 'cur_rescue_task', 'cur_always_task',
-                     'run_state', 'fail_state', 'pending_setup', 'cur_dep_chain',
+        for attr in ('_blocks', '_handlers',
+                     'cur_block', 'cur_regular_task', 'cur_rescue_task', 'cur_always_task', 'cur_handlers_task',
+                     'run_state', 'fail_state', 'pre_flushing_run_state', 'pending_setup', 'cur_dep_chain',
                      'tasks_child_state', 'rescue_child_state', 'always_child_state'):
             if getattr(self, attr) != getattr(other, attr):
                 return False
@@ -116,7 +117,6 @@ class HostState:
     def copy(self):
         new_state = HostState(self._blocks)
         new_state._handlers = self._handlers[:]
-        new_state.pre_flushing_run_state = self.pre_flushing_run_state
         new_state.cur_block = self.cur_block
         new_state.cur_regular_task = self.cur_regular_task
         new_state.cur_rescue_task = self.cur_rescue_task
@@ -124,6 +124,7 @@ class HostState:
         new_state.cur_handlers_task = self.cur_handlers_task
         new_state.run_state = self.run_state
         new_state.fail_state = self.fail_state
+        new_state.pre_flushing_run_state = self.pre_flushing_run_state
         new_state.pending_setup = self.pending_setup
         new_state.did_rescue = self.did_rescue
         new_state.did_start_at_task = self.did_start_at_task

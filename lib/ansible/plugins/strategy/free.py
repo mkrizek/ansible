@@ -244,8 +244,20 @@ class StrategyModule(StrategyBase):
                                 loader=self._loader,
                             )
                         else:
-                            # FIXME support handlers
-                            new_blocks = self._load_included_file(included_file, iterator=iterator)
+                            if isinstance(included_file._task, Handler):
+                                new_blocks = self._load_included_file(included_file, iterator=iterator, is_handler=True)
+                                # for every task in each block brought in by the include, add the list
+                                # of hosts which included the file to the notified_handlers dict
+                                for block in new_blocks:
+                                    # TODO filter tags
+                                    iterator._play.handlers.append(block)
+                                    for included_handler_task in block.block:
+                                        display.debug("adding task '%s' included in handler '%s'" % (included_handler_task.get_name(), included_file._task.get_name()))
+                                        for host in included_file._hosts:
+                                            iterator.add_handler(host, included_handler_task)
+                                continue
+                            else:
+                                new_blocks = self._load_included_file(included_file, iterator=iterator)
                     except AnsibleError as e:
                         for host in included_file._hosts:
                             iterator.mark_host_failed(host)
