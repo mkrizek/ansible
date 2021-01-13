@@ -55,6 +55,14 @@ class StrategyModule(StrategyBase):
         super(StrategyModule, self).__init__(tqm)
         self._host_pinned = False
 
+    def _flush_handlers(self, iterator, host):
+        host_state = iterator._host_states[host.name]
+
+        # prevent doing `meta: flush_handlers` in a handler
+        if host_state.run_state != iterator.ITERATING_HANDLERS:
+            host_state.pre_flushing_run_state = host_state.run_state
+            host_state.run_state = iterator.ITERATING_HANDLERS
+
     def run(self, iterator, play_context):
         '''
         The "free" strategy is a bit more complex, in that it allows tasks to
@@ -250,6 +258,7 @@ class StrategyModule(StrategyBase):
                                 # of hosts which included the file to the notified_handlers dict
                                 for block in new_blocks:
                                     # TODO filter tags
+                                    # TODO full blocks (rescue, always)
                                     iterator._play.handlers.append(block)
                                     for included_handler_task in block.block:
                                         display.debug(

@@ -307,7 +307,7 @@ class StrategyBase:
         # into its own variable and (2) there's only a single code path
         # leading to the module being run.  This is called by two
         # functions: linear.py::run(), and
-        # free.py::run() so we'd have to add to all three to do it there.
+        # free.py::run() so we'd have to add to both to do it there.
         # The next common higher level is __init__.py::run() and that has
         # tasks inside of play_iterator so we'd have to extract them to do it
         # there.
@@ -930,6 +930,9 @@ class StrategyBase:
     def _cond_not_supported_warn(self, task_name):
         display.warning("%s task does not support when conditional" % task_name)
 
+    def _flush_handlers(self, iterator, host):
+        raise NotImplementedError
+
     def _execute_meta(self, task, play_context, iterator, target_host):
 
         # meta tasks store their args in the _raw_params field of args,
@@ -954,15 +957,7 @@ class StrategyBase:
         if meta_action == 'noop':
             msg = "noop"
         elif meta_action == 'flush_handlers':
-            # FIXME push down to specific strategy
-            if self._load_name == 'free':
-                iterator._host_states[target_host.name].pre_flushing_run_state = iterator._host_states[target_host.name].run_state
-                iterator._host_states[target_host.name].run_state = iterator.ITERATING_HANDLERS
-            else:
-                for host in self._inventory.get_hosts(iterator._play.hosts):
-                    if host.name not in self._tqm._unreachable_hosts and iterator._host_states[host.name].run_state != iterator.ITERATING_COMPLETE:  # FIXME
-                        iterator._host_states[host.name].pre_flushing_run_state = iterator._host_states[host.name].run_state
-                        iterator._host_states[host.name].run_state = iterator.ITERATING_HANDLERS
+            self._flush_handlers(iterator, target_host)
             msg = "ran handlers"
         elif meta_action == 'refresh_inventory':
             self._inventory.refresh_inventory()
@@ -991,7 +986,6 @@ class StrategyBase:
             if _evaluate_conditional(target_host):
                 for host in self._inventory.get_hosts(iterator._play.hosts):
                     if host.name not in self._tqm._unreachable_hosts:
-                        # FIXME ITERATING_HANDLERS when force_handlers?
                         iterator._host_states[host.name].run_state = iterator.ITERATING_COMPLETE
                 msg = "ending play"
             else:
@@ -999,7 +993,6 @@ class StrategyBase:
                 skip_reason += ', continuing play'
         elif meta_action == 'end_host':
             if _evaluate_conditional(target_host):
-                # FIXME ITERATING_HANDLERS when force_handlers?
                 iterator._host_states[target_host.name].run_state = iterator.ITERATING_COMPLETE
                 iterator._play._removed_hosts.append(target_host.name)
                 msg = "ending play for %s" % target_host.name

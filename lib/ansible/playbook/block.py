@@ -37,7 +37,6 @@ class Block(Base, Conditional, CollectionSearch, Taggable):
     _block = FieldAttribute(isa='list', default=list, inherit=False)
     _rescue = FieldAttribute(isa='list', default=list, inherit=False)
     _always = FieldAttribute(isa='list', default=list, inherit=False)
-    # _handlers = FieldAttribute(isa='list', default=list, inherit=False)
 
     # other fields for task compat
     _notify = FieldAttribute(isa='list')

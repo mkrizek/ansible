@@ -81,6 +81,13 @@ class StrategyModule(StrategyBase):
 
         return self._create_noop_block_from(original_block, parent)
 
+    def _flush_handlers(self, iterator, host):
+        for host in self._inventory.get_hosts(iterator._play.hosts):
+            host_state = iterator._host_states[host.name]
+            if host.name not in self._tqm._unreachable_hosts and host_state.run_state not in (iterator.ITERATING_HANDLERS, iterator.ITERATING_COMPLETE):
+                host_state.pre_flushing_run_state = host_state.run_state
+                host_state.run_state = iterator.ITERATING_HANDLERS
+
     def _get_next_task_lockstep(self, hosts, iterator):
         '''
         Returns a list of (host, task) tuples, where the task may
@@ -377,6 +384,7 @@ class StrategyModule(StrategyBase):
                                     # of hosts which included the file to the notified_handlers dict
                                     for block in new_blocks:
                                         # TODO filter tags
+                                        # TODO full blocks (rescue, always)
                                         iterator._play.handlers.append(block)
                                         for included_handler_task in block.block:
                                             display.debug(
