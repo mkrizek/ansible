@@ -455,16 +455,23 @@ class StrategyBase:
         def search_handler_blocks_by_name(handler_name, handler_blocks):
             # iterate in reversed order since last handler loaded with the same name wins
             for handler_block in reversed(handler_blocks):
-                for handler_task in handler_block.block:
-                    if handler_task.name:
-                        if not handler_task.cached_name:
-                            if handler_templar.is_template(handler_task.name):
+                if not handler_block.name:
+                    # unnamed block, implicit or user-defined, treat all tasks within the block.block as separate handlers
+                    handlers = handler_block.block
+                else:
+                    # the whole block is a handler
+                    handlers = [handler_block]
+
+                for handler in handlers:
+                    if handler.name:
+                        if not handler.cached_name:
+                            if handler_templar.is_template(handler.name):
                                 handler_templar.available_variables = self._variable_manager.get_vars(play=iterator._play,
-                                                                                                      task=handler_task,
+                                                                                                      task=handler,
                                                                                                       _hosts=self._hosts_cache,
                                                                                                       _hosts_all=self._hosts_cache_all)
-                                handler_task.name = handler_templar.template(handler_task.name)
-                            handler_task.cached_name = True
+                                handler.name = handler_templar.template(handler.name)
+                            handler.cached_name = True
 
                         try:
                             # first we check with the full result of get_name(), which may
@@ -472,19 +479,26 @@ class StrategyBase:
                             # is not found, we resort to the simple name field, which doesn't
                             # have anything extra added to it.
                             candidates = (
-                                handler_task.name,
-                                handler_task.get_name(include_role_fqcn=False),
-                                handler_task.get_name(include_role_fqcn=True),
+                                handler.name,
+                                handler.get_name(include_role_fqcn=False),
+                                handler.get_name(include_role_fqcn=True),
                             )
 
                             if handler_name in candidates:
-                                return handler_task
+                                return handler
                         except (UndefinedError, AnsibleUndefinedVariable):
                             # We skip this handler due to the fact that it may be using
                             # a variable in the name that was conditionally included via
                             # set_fact or some other method, and we don't want to error
                             # out unnecessarily
                             continue
+                    else:
+                        # FIXME ugh, flatten blocks instead? ugh
+                        from ansible.playbook.handler_block import HandlerBlock
+                        if isinstance(handler, HandlerBlock):
+                            target_handler = search_handler_blocks_by_name(handler_name, [handler])
+                            if target_handler is not None:
+                                return target_handler
             return None
 
         cur_pass = 0
@@ -590,7 +604,14 @@ class StrategyBase:
                                         self._tqm.send_callback('v2_playbook_on_notify', target_handler, original_host)
 
                                 for listening_handler_block in iterator._play.handlers:
-                                    for listening_handler in listening_handler_block.block:
+                                    if not listening_handler_block.name:
+                                        # unnamed block, implicit or user-defined, treat all tasks within the block.block as separate handlers
+                                        listening_handlers = listening_handler_block.block
+                                    else:
+                                        # the whole block is a handler
+                                        listening_handlers = [listening_handler_block]
+
+                                    for listening_handler in listening_handlers:
                                         listeners = getattr(listening_handler, 'listen', []) or []
                                         if not listeners:
                                             continue
@@ -903,6 +924,13 @@ class StrategyBase:
         self._tqm.send_callback('v2_playbook_on_include', included_file)
         display.debug("done processing included file")
         return block_list
+
+    def run_handlers(self, iterator, play_context):
+        '''
+        Runs handlers on those hosts which have been notified.
+        '''
+        # FIXME backwards compat
+        pass
 
     def _take_step(self, task, host=None):
 

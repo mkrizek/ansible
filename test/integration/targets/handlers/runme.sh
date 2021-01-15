@@ -96,3 +96,8 @@ result="$(ansible-playbook test_handlers_template_run_once.yml -i inventory.hand
 set -e
 grep -q "handler A" <<< "$result"
 grep -q "handler B" <<< "$result"
+
+
+ANSIBLE_STRATEGY=linear ansible-playbook test_handler_blocks.yml -i inventory.handlers -v "$@"
+ANSIBLE_STRATEGY=free ansible-playbook test_handler_blocks.yml -i inventory.handlers -v "$@"
+ansible-playbook test_handlers_meta.yml -i inventory.handlers -vv "$@"

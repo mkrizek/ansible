@@ -73,6 +73,21 @@ class Block(Base, Conditional, CollectionSearch, Taggable):
         '''object comparison based on _uuid'''
         return self._uuid != other._uuid
 
+    def get_name(self, include_role_fqcn=True):
+        ''' return the name of the block '''
+        if self._role:
+            role_name = self._role.get_name(include_role_fqcn=include_role_fqcn)
+
+        if self._role and self.name:
+            return "%s : %s" % (role_name, self.name)
+        elif self.name:
+            return self.name
+        # else:
+        #     if self._role:
+        #         return "%s : %s" % (role_name, self.action)
+        #     else:
+        #         return "%s" % (self.action,)
+
     def get_vars(self):
         '''
         Blocks do not store variables directly, however they may be a member

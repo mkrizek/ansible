@@ -273,6 +273,7 @@ class TestStrategyBase(unittest.TestCase):
         mock_iterator.get_next_task_for_host.return_value = (None, None)
 
         mock_handler_block = MagicMock()
+        mock_handler_block.name = ''  # implicit unnamed block
         mock_handler_block.block = [mock_handler_task]
         mock_handler_block.rescue = []
         mock_handler_block.always = []
