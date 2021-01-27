@@ -108,7 +108,8 @@ class StrategyModule(StrategyBase):
         rvals = []
         for host, (state, task) in host_tasks_to_run:
             if state == lowest_state:
-                new_t = iterator.get_next_task_for_host(host)
+                # actually advance the host without peek=True
+                iterator.get_next_task_for_host(host)
                 rvals.append((host, task))
             else:
                 rvals.append((host, noop_task))
