@@ -453,13 +453,12 @@ class PlayIterator:
                             state.handlers_child_state = None
                             continue
                 else:
-                    if state.cur_handlers_task >= len(state._handlers):
+                    if state.fail_state != self.FAILED_NONE and not self._play.force_handlers:
+                        state.run_state = self.ITERATING_COMPLETE
+                    elif state.cur_handlers_task >= len(state._handlers):
                         state._handlers = []
                         state.cur_handlers_task = 0
-                        if state.fail_state != self.FAILED_NONE:
-                            state.run_state = self.ITERATING_COMPLETE
-                        else:
-                            state.run_state = state.pre_flushing_run_state
+                        state.run_state = state.pre_flushing_run_state
                     else:
                         task = state._handlers[state.cur_handlers_task]
                         if isinstance(task, Block):
