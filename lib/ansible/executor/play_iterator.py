@@ -143,8 +143,15 @@ class HostState:
 
         if self.cur_block < other.cur_block:
             return True
+        elif self.cur_block > other.cur_block:
+            return False
+        # NOTE if self.cur_block == other.cur_block then we need to continue comparing other properties
+
         if self.run_state < other.run_state:
             return True
+        elif self.run_state > other.run_state:
+            return False
+
         if self.run_state == other.run_state:
             if self.run_state == PlayIterator.ITERATING_SETUP:
                 # if both states are in ITERATING_SETUP then they are "equal"
@@ -153,6 +160,8 @@ class HostState:
             elif self.run_state == PlayIterator.ITERATING_TASKS:
                 if self.cur_regular_task < other.cur_regular_task:
                     return True
+                elif self.cur_regular_task > other.cur_regular_task:
+                    return False
                 if self.tasks_child_state is not None and other.tasks_child_state is not None:
                     return self.tasks_child_state < other.tasks_child_state
                 if self.tasks_child_state is not None and other.tasks_child_state is None:
@@ -160,6 +169,8 @@ class HostState:
             elif self.run_state == PlayIterator.ITERATING_RESCUE:
                 if self.cur_rescue_task < other.cur_rescue_task:
                     return True
+                elif self.cur_rescue_task > other.cur_rescue_task:
+                    return False
                 if self.rescue_child_state is not None and other.rescue_child_state is not None:
                     return self.rescue_child_state < other.rescue_child_state
                 if self.rescue_child_state is not None and other.rescue_child_state is None:
@@ -167,6 +178,8 @@ class HostState:
             elif self.run_state == PlayIterator.ITERATING_ALWAYS:
                 if self.cur_always_task < other.cur_always_task:
                     return True
+                elif self.cur_always_task > other.cur_always_task:
+                    return False
                 if self.always_child_state is not None and other.always_child_state is not None:
                     return self.always_child_state < other.always_child_state
                 if self.always_child_state is not None and other.always_child_state is None:

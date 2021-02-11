@@ -102,4 +102,12 @@ cat role_complete_test.out
 rm -f role_complete_test.out
 
 # https://github.com/ansible/ansible/issues/72725
-ansible-playbook -i host1,host2 -v 72725.yml
+ansible-playbook -i host1,host2 -vv 72725.yml
+
+# https://github.com/ansible/ansible/issues/72781
+set +e
+ansible-playbook -i host1,host2 -vv 72781.yml > 72781.out
+set -e
+cat 72781.out
+[ "$(grep -c 'SHOULD NOT HAPPEN' 72781.out)" -eq 0 ]
+rm -f 72781.out
