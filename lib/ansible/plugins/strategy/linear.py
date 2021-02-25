@@ -32,7 +32,7 @@ DOCUMENTATION = '''
 '''
 
 from ansible import constants as C
-from ansible.errors import AnsibleError, AnsibleAssertionError
+from ansible.errors import AnsibleError, AnsibleAssertionError, AnsibleParserError
 from ansible.executor.play_iterator import PlayIterator
 from ansible.module_utils.six import iteritems
 from ansible.module_utils._text import to_text
@@ -383,7 +383,8 @@ class StrategyModule(StrategyBase):
                                     else:
                                         all_blocks[host].append(noop_block)
                             display.debug("done iterating over new_blocks loaded from include file")
-
+                        except AnsibleParserError:
+                            raise
                         except AnsibleError as e:
                             for host in included_file._hosts:
                                 self._tqm._failed_hosts[host.name] = True

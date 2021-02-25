@@ -126,3 +126,7 @@ ANSIBLE_HOST_PATTERN_MISMATCH=error ansible-playbook empty_group_warning/playboo
 
 ansible-playbook test_include_loop.yml "$@"
 ansible-playbook test_include_loop_fqcn.yml "$@"
+
+# https://github.com/ansible/ansible/issues/73657
+ansible-playbook issue73657.yml 2>&1 | tee issue73657.out
+test "$(grep -c 'SHOULD_NOT_EXECUTE' issue73657.out)" = 0
