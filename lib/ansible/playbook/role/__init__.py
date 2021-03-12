@@ -95,8 +95,8 @@ def hash_params(params):
 
 class Role(Base, Conditional, Taggable, CollectionSearch):
 
-    _delegate_to = FieldAttribute(isa='string')
-    _delegate_facts = FieldAttribute(isa='bool')
+    delegate_to = FieldAttribute(name="delegate_to", isa='string')
+    delegate_facts = FieldAttribute(name="delegate_facts", isa='bool')
 
     def __init__(self, play=None, from_files=None, from_include=False, validate=True):
         self._role_name = None
@@ -196,15 +196,16 @@ class Role(Base, Conditional, Taggable, CollectionSearch):
             self.add_parent(parent_role)
 
         # copy over all field attributes from the RoleInclude
-        # update self._attributes directly, to avoid squashing
-        for (attr_name, dump) in iteritems(self._valid_attrs):
+        for attr_name in self.get_attributes().keys():
             if attr_name in ('when', 'tags'):
-                self._attributes[attr_name] = self._extend_value(
-                    self._attributes[attr_name],
-                    role_include._attributes[attr_name],
+                setattr(self, attr_name,
+                        self._extend_value(
+                            getattr(self, attr_name),
+                            getattr(role_include, attr_name),
+                        )
                 )
             else:
-                self._attributes[attr_name] = role_include._attributes[attr_name]
+                setattr(self, attr_name, getattr(role_include, attr_name))
 
         # vars and default vars are regular dictionaries
         self._role_vars = self._load_role_yaml('vars', main=self._from_files.get('vars'), allow_dir=True)

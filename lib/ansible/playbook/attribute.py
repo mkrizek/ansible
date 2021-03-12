@@ -21,6 +21,7 @@ __metaclass__ = type
 
 from copy import copy, deepcopy
 
+from ansible.utils.sentinel import Sentinel
 
 _CONTAINERS = frozenset(('list', 'dict', 'set'))
 
@@ -29,6 +30,7 @@ class Attribute:
 
     def __init__(
         self,
+        name=None,
         isa=None,
         private=False,
         default=None,
@@ -49,6 +51,7 @@ class Attribute:
         derive from playbook data.  The attributes of the object are basically
         a schema for the yaml playbook.
 
+        :kwarg name: The name of the attribute.
         :kwarg isa: The type of the attribute.  Allowable values are a string
             representation of any yaml basic datatype, python class, or percent.
             (Enforced at post-validation time).
@@ -77,6 +80,7 @@ class Attribute:
             the attribute name may conflict with a Python reserved word.
         """
 
+        self.name = name
         self.isa = isa
         self.private = private
         self.default = default
@@ -113,6 +117,37 @@ class Attribute:
 
     def __ge__(self, other):
         return other.priority >= self.priority
+
+    def __get__(self, obj, obj_type=None):
+        method = "_get_attr_%s" % self.name
+        if hasattr(obj, method):
+            if obj._squashed:
+                rv = obj.__dict__.get(self.name, self.default)
+            else:
+                rv = getattr(obj, method)()
+        elif hasattr(obj, '_get_parent_attribute') and self.inherit:
+            if obj._squashed or obj._finalized:
+                rv = obj.__dict__.get(self.name, self.default)
+            else:
+                try:
+                    rv = obj._get_parent_attribute(self.name)
+                except AttributeError:
+                    rv = obj.__dict__.get(self.name, self.default)
+        else:
+            rv = obj.__dict__.get(self.name, self.default)
+
+        if rv is Sentinel:
+            rv = self.default
+
+        if callable(rv):
+            rv = rv()
+
+        return rv
+
+    def __set__(self, obj, value):
+        obj.__dict__[self.name] = value if not callable(value) else value()
+        if self.alias is not None:
+            obj.__dict__[self.alias] = obj.__dict__[self.name]
 
 
 class FieldAttribute(Attribute):

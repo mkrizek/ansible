@@ -34,18 +34,18 @@ from ansible.utils.sentinel import Sentinel
 class Block(Base, Conditional, CollectionSearch, Taggable):
 
     # main block fields containing the task lists
-    _block = FieldAttribute(isa='list', default=list, inherit=False)
-    _rescue = FieldAttribute(isa='list', default=list, inherit=False)
-    _always = FieldAttribute(isa='list', default=list, inherit=False)
+    block = FieldAttribute(name="block", isa='list', default=list, inherit=False)
+    rescue = FieldAttribute(name="rescue", isa='list', default=list, inherit=False)
+    always = FieldAttribute(name="always", isa='list', default=list, inherit=False)
 
     # other fields for task compat
-    _notify = FieldAttribute(isa='list')
-    _delegate_to = FieldAttribute(isa='string')
-    _delegate_facts = FieldAttribute(isa='bool')
+    notify = FieldAttribute(name="notify", isa='list')
+    delegate_to = FieldAttribute(name="delegate_to", isa='string')
+    delegate_facts = FieldAttribute(name="delegate_facts", isa='bool')
 
     # for future consideration? this would be functionally
     # similar to the 'else' clause for exceptions
-    # _otherwise = FieldAttribute(isa='list')
+    # otherwise = FieldAttribute(name="otherwise", isa='list')
 
     def __init__(self, play=None, parent_block=None, role=None, task_include=None, use_handlers=False, implicit=False):
         self._play = play
@@ -228,7 +228,7 @@ class Block(Base, Conditional, CollectionSearch, Taggable):
         '''
 
         data = dict()
-        for attr in self._valid_attrs:
+        for attr in self.get_attributes():
             if attr not in ('block', 'rescue', 'always'):
                 data[attr] = getattr(self, attr)
 
@@ -254,7 +254,7 @@ class Block(Base, Conditional, CollectionSearch, Taggable):
 
         # we don't want the full set of attributes (the task lists), as that
         # would lead to a serialize/deserialize loop
-        for attr in self._valid_attrs:
+        for attr in self.get_attributes():
             if attr in data and attr not in ('block', 'rescue', 'always'):
                 setattr(self, attr, data.get(attr))
 
@@ -296,11 +296,10 @@ class Block(Base, Conditional, CollectionSearch, Taggable):
         '''
         Generic logic to get the attribute or parent attribute for a block value.
         '''
-
-        extend = self._valid_attrs[attr].extend
-        prepend = self._valid_attrs[attr].prepend
+        extend = self.get_attributes().get(attr).extend
+        prepend = self.get_attributes().get(attr).prepend
         try:
-            value = self._attributes[attr]
+            value = self.__dict__.get(attr, Sentinel)
             # If parent is static, we can grab attrs from the parent
             # otherwise, defer to the grandparent
             if getattr(self._parent, 'statically_loaded', True):
@@ -323,7 +322,7 @@ class Block(Base, Conditional, CollectionSearch, Taggable):
                     pass
             if self._role and (value is Sentinel or extend):
                 try:
-                    parent_value = self._role._attributes.get(attr, Sentinel)
+                    parent_value = self._role.__dict__.get(attr, Sentinel)
                     if extend:
                         value = self._extend_value(value, parent_value, prepend)
                     else:
@@ -333,7 +332,7 @@ class Block(Base, Conditional, CollectionSearch, Taggable):
                     if dep_chain and (value is Sentinel or extend):
                         dep_chain.reverse()
                         for dep in dep_chain:
-                            dep_value = dep._attributes.get(attr, Sentinel)
+                            dep_value = dep.__dict__.get(attr, Sentinel)
                             if extend:
                                 value = self._extend_value(value, dep_value, prepend)
                             else:
@@ -345,7 +344,7 @@ class Block(Base, Conditional, CollectionSearch, Taggable):
                     pass
             if self._play and (value is Sentinel or extend):
                 try:
-                    play_value = self._play._attributes.get(attr, Sentinel)
+                    play_value = self._play.__dict__.get(attr, Sentinel)
                     if play_value is not Sentinel:
                         if extend:
                             value = self._extend_value(value, play_value, prepend)

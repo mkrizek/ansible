@@ -68,25 +68,25 @@ class Task(Base, Conditional, Taggable, CollectionSearch):
     # inheritance is only triggered if the 'current value' is None,
     # default can be set at play/top level object and inheritance will take it's course.
 
-    _args = FieldAttribute(isa='dict', default=dict)
-    _action = FieldAttribute(isa='string')
+    args = FieldAttribute(name="args", isa='dict', default=dict)
+    action = FieldAttribute(name="action", isa='string')
 
-    _async_val = FieldAttribute(isa='int', default=0, alias='async')
-    _changed_when = FieldAttribute(isa='list', default=list)
-    _delay = FieldAttribute(isa='int', default=5)
-    _delegate_to = FieldAttribute(isa='string')
-    _delegate_facts = FieldAttribute(isa='bool')
-    _failed_when = FieldAttribute(isa='list', default=list)
-    _loop = FieldAttribute()
-    _loop_control = FieldAttribute(isa='class', class_type=LoopControl, inherit=False)
-    _notify = FieldAttribute(isa='list')
-    _poll = FieldAttribute(isa='int', default=C.DEFAULT_POLL_INTERVAL)
-    _register = FieldAttribute(isa='string', static=True)
-    _retries = FieldAttribute(isa='int', default=3)
-    _until = FieldAttribute(isa='list', default=list)
+    async_val = FieldAttribute(name="async_val", isa='int', default=0, alias='async')
+    changed_when = FieldAttribute(name="changed_when", isa='list', default=list)
+    delay = FieldAttribute(name="delay", isa='int', default=5)
+    delegate_to = FieldAttribute(name="delegate_to", isa='string')
+    delegate_facts = FieldAttribute(name="delegate_facts", isa='bool')
+    failed_when = FieldAttribute(name="failed_when", isa='list', default=list)
+    loop = FieldAttribute(name="loop")
+    loop_control = FieldAttribute(name="loop_control", isa='class', class_type=LoopControl, inherit=False)
+    notify = FieldAttribute(name="notify", isa='list')
+    poll = FieldAttribute(name="poll", isa='int', default=C.DEFAULT_POLL_INTERVAL)
+    register = FieldAttribute(name="register", isa='string', static=True)
+    retries = FieldAttribute(name="retries", isa='int', default=3)
+    until = FieldAttribute(name="until", isa='list', default=list)
 
     # deprecated, used to be loop and loop_args but loop has been repurposed
-    _loop_with = FieldAttribute(isa='string', private=True, inherit=False)
+    loop_with = FieldAttribute(name="loop_with", isa='string', private=True, inherit=False)
 
     def __init__(self, block=None, role=None, task_include=None):
         ''' constructors a task, without the Task.load classmethod, it will be pretty blank '''
@@ -472,11 +472,10 @@ class Task(Base, Conditional, Taggable, CollectionSearch):
         '''
         Generic logic to get the attribute or parent attribute for a task value.
         '''
-
-        extend = self._valid_attrs[attr].extend
-        prepend = self._valid_attrs[attr].prepend
+        extend = self.get_attributes().get(attr).extend
+        prepend = self.get_attributes().get(attr).prepend
         try:
-            value = self._attributes[attr]
+            value = self.__dict__.get(attr, Sentinel)
             # If parent is static, we can grab attrs from the parent
             # otherwise, defer to the grandparent
             if getattr(self._parent, 'statically_loaded', True):
@@ -490,7 +489,7 @@ class Task(Base, Conditional, Taggable, CollectionSearch):
                     if attr != 'vars' and hasattr(_parent, '_get_parent_attribute'):
                         parent_value = _parent._get_parent_attribute(attr)
                     else:
-                        parent_value = _parent._attributes.get(attr, Sentinel)
+                        parent_value = getattr(_parent, attr, Sentinel)
 
                     if extend:
                         value = self._extend_value(value, parent_value, prepend)

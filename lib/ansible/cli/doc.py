@@ -479,7 +479,7 @@ class DocCLI(CLI, RoleMixin):
                         loaded_class = importlib.import_module(obj_class)
                         PB_LOADED[pobj] = getattr(loaded_class, pobj, None)
 
-                    if keyword in PB_LOADED[pobj]._valid_attrs:
+                    if keyword in PB_LOADED[pobj].get_attributes():
                         kdata['applies_to'].append(pobj)
 
                         # we should only need these once

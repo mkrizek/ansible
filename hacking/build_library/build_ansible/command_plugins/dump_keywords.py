@@ -50,7 +50,7 @@ def extract_keywords(keyword_definitions):
 
         # Maintain order of the actual class names for our output
         # Build up a mapping of playbook classes to the attributes that they hold
-        pb_keywords[pb_class_name] = {k: v for (k, v) in playbook_class._valid_attrs.items()
+        pb_keywords[pb_class_name] = {k: v for (k, v) in playbook_class.get_attributes().items()
                                       # Filter private attributes as they're not usable in playbooks
                                       if not v.private}
 
