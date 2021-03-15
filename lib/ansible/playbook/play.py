@@ -201,8 +201,7 @@ class Play(Base, Taggable, CollectionSearch):
         for ri in role_includes:
             roles.append(Role.load(ri, play=self))
 
-        #self.roles[:0] = roles
-        self.roles = roles + self.roles
+        self.roles[:0] = roles
 
         return self.roles
 

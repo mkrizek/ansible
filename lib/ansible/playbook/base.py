@@ -49,12 +49,12 @@ class FieldAttributeBase:
 
     @classmethod
     def get_attributes(cls):
-        tmp = {}
+        attributes = {}
         for class_obj in reversed(cls.__mro__):
             for name, attr in class_obj.__dict__.items():
                 if isinstance(attr, Attribute):
-                    tmp[name] = attr
-        return tmp
+                    attributes[name] = attr
+        return attributes
 
     def dump_me(self, depth=0):
         ''' this is never called from production code, it is here to be used when debugging as a 'complex print' '''
@@ -102,6 +102,9 @@ class FieldAttributeBase:
         # Walk all attributes in the class. We sort them based on their priority
         # so that certain fields can be loaded before others, if they are dependent.
         for name, attr in sorted(iteritems(self.get_attributes()), key=operator.itemgetter(1)):
+            # trigger saving the default value so things like self.roles[:0] = roles is possible
+            setattr(self, name, getattr(self, name))
+
             # copy the value over unless a _load_field method is defined
             if name in ds:
                 method = getattr(self, '_load_%s' % name, None)

@@ -177,7 +177,7 @@ class InheritableFieldAttribute(FieldAttribute):
             value = self.default
 
         if callable(value):
-            value = value ()
+            value = value()
 
         return value
 
