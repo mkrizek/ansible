@@ -34,6 +34,7 @@ from ansible.playbook.role.metadata import RoleMetadata
 from ansible.playbook.taggable import Taggable
 from ansible.plugins.loader import add_all_plugin_dirs
 from ansible.utils.collection_loader import AnsibleCollectionConfig
+from ansible.utils.sentinel import Sentinel
 from ansible.utils.vars import combine_vars
 
 
@@ -196,16 +197,14 @@ class Role(Base, Conditional, Taggable, CollectionSearch):
             self.add_parent(parent_role)
 
         # copy over all field attributes from the RoleInclude
+        # update self.__dict__ directly, to avoid squashing
         for attr_name in self.get_attributes().keys():
             if attr_name in ('when', 'tags'):
-                setattr(self, attr_name,
-                        self._extend_value(
-                            getattr(self, attr_name),
-                            getattr(role_include, attr_name),
-                        )
+                self.__dict__[attr_name] = self._extend_value(
+                    self.__dict__.get(attr_name, Sentinel), role_include.__dict__.get(attr_name, Sentinel)
                 )
             else:
-                setattr(self, attr_name, getattr(role_include, attr_name))
+                self.__dict__[attr_name] = role_include.__dict__.get(attr_name, Sentinel)
 
         # vars and default vars are regular dictionaries
         self._role_vars = self._load_role_yaml('vars', main=self._from_files.get('vars'), allow_dir=True)

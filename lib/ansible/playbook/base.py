@@ -102,9 +102,6 @@ class FieldAttributeBase:
         # Walk all attributes in the class. We sort them based on their priority
         # so that certain fields can be loaded before others, if they are dependent.
         for name, attr in sorted(iteritems(self.get_attributes()), key=operator.itemgetter(1)):
-            # trigger saving the default value so things like self.roles[:0] = roles is possible
-            setattr(self, name, getattr(self, name))
-
             # copy the value over unless a _load_field method is defined
             if name in ds:
                 method = getattr(self, '_load_%s' % name, None)
