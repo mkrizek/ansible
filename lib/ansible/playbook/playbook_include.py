@@ -27,7 +27,7 @@ from ansible.module_utils._text import to_bytes
 from ansible.module_utils.six import iteritems, string_types
 from ansible.parsing.splitter import split_args, parse_kv
 from ansible.parsing.yaml.objects import AnsibleBaseYAMLObject, AnsibleMapping
-from ansible.playbook.attribute import FieldAttribute
+from ansible.playbook.attribute import InheritableFieldAttribute
 from ansible.playbook.base import Base
 from ansible.playbook.conditional import Conditional
 from ansible.playbook.taggable import Taggable
@@ -41,8 +41,8 @@ display = Display()
 
 class PlaybookInclude(Base, Conditional, Taggable):
 
-    import_playbook = FieldAttribute(name="import_playbook", isa='string')
-    vars = FieldAttribute(name="vars", isa='dict', default=dict)
+    import_playbook = InheritableFieldAttribute(name="import_playbook", isa='string')
+    vars = InheritableFieldAttribute(name="vars", isa='dict', default=dict)
 
     @staticmethod
     def load(data, basedir, variable_manager=None, loader=None):

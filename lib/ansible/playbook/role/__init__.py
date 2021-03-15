@@ -25,7 +25,7 @@ from ansible.errors import AnsibleError, AnsibleParserError, AnsibleAssertionErr
 from ansible.module_utils._text import to_text
 from ansible.module_utils.six import iteritems, binary_type, text_type
 from ansible.module_utils.common._collections_compat import Container, Mapping, Set, Sequence
-from ansible.playbook.attribute import FieldAttribute
+from ansible.playbook.attribute import InheritableFieldAttribute
 from ansible.playbook.base import Base
 from ansible.playbook.collectionsearch import CollectionSearch
 from ansible.playbook.conditional import Conditional
@@ -95,8 +95,8 @@ def hash_params(params):
 
 class Role(Base, Conditional, Taggable, CollectionSearch):
 
-    delegate_to = FieldAttribute(name="delegate_to", isa='string')
-    delegate_facts = FieldAttribute(name="delegate_facts", isa='bool')
+    delegate_to = InheritableFieldAttribute(name="delegate_to", isa='string')
+    delegate_facts = InheritableFieldAttribute(name="delegate_facts", isa='bool')
 
     def __init__(self, play=None, from_files=None, from_include=False, validate=True):
         self._role_name = None

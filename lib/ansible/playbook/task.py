@@ -28,7 +28,7 @@ from ansible.module_utils.six import iteritems, string_types
 from ansible.parsing.mod_args import ModuleArgsParser
 from ansible.parsing.yaml.objects import AnsibleBaseYAMLObject, AnsibleMapping
 from ansible.plugins.loader import lookup_loader
-from ansible.playbook.attribute import FieldAttribute
+from ansible.playbook.attribute import FieldAttribute, InheritableFieldAttribute
 from ansible.playbook.base import Base
 from ansible.playbook.block import Block
 from ansible.playbook.collectionsearch import CollectionSearch
@@ -65,28 +65,28 @@ class Task(Base, Conditional, Taggable, CollectionSearch):
     # might be possible to define others
 
     # NOTE: ONLY set defaults on task attributes that are not inheritable,
-    # inheritance is only triggered if the 'current value' is None,
+    # inheritance is only triggered if the 'current value' is Sentinel,
     # default can be set at play/top level object and inheritance will take it's course.
 
-    args = FieldAttribute(name="args", isa='dict', default=dict)
-    action = FieldAttribute(name="action", isa='string')
+    args = InheritableFieldAttribute(name="args", isa='dict', default=dict)
+    action = InheritableFieldAttribute(name="action", isa='string')
 
-    async_val = FieldAttribute(name="async_val", isa='int', default=0, alias='async')
-    changed_when = FieldAttribute(name="changed_when", isa='list', default=list)
-    delay = FieldAttribute(name="delay", isa='int', default=5)
-    delegate_to = FieldAttribute(name="delegate_to", isa='string')
-    delegate_facts = FieldAttribute(name="delegate_facts", isa='bool')
-    failed_when = FieldAttribute(name="failed_when", isa='list', default=list)
-    loop = FieldAttribute(name="loop")
-    loop_control = FieldAttribute(name="loop_control", isa='class', class_type=LoopControl, inherit=False)
-    notify = FieldAttribute(name="notify", isa='list')
-    poll = FieldAttribute(name="poll", isa='int', default=C.DEFAULT_POLL_INTERVAL)
-    register = FieldAttribute(name="register", isa='string', static=True)
-    retries = FieldAttribute(name="retries", isa='int', default=3)
-    until = FieldAttribute(name="until", isa='list', default=list)
+    async_val = InheritableFieldAttribute(name="async_val", isa='int', default=0, alias='async')
+    changed_when = InheritableFieldAttribute(name="changed_when", isa='list', default=list)
+    delay = InheritableFieldAttribute(name="delay", isa='int', default=5)
+    delegate_to = InheritableFieldAttribute(name="delegate_to", isa='string')
+    delegate_facts = InheritableFieldAttribute(name="delegate_facts", isa='bool')
+    failed_when = InheritableFieldAttribute(name="failed_when", isa='list', default=list)
+    loop = InheritableFieldAttribute(name="loop")
+    loop_control = FieldAttribute(name="loop_control", isa='class', class_type=LoopControl)
+    notify = InheritableFieldAttribute(name="notify", isa='list')
+    poll = InheritableFieldAttribute(name="poll", isa='int', default=C.DEFAULT_POLL_INTERVAL)
+    register = InheritableFieldAttribute(name="register", isa='string', static=True)
+    retries = InheritableFieldAttribute(name="retries", isa='int', default=3)
+    until = InheritableFieldAttribute(name="until", isa='list', default=list)
 
     # deprecated, used to be loop and loop_args but loop has been repurposed
-    loop_with = FieldAttribute(name="loop_with", isa='string', private=True, inherit=False)
+    loop_with = FieldAttribute(name="loop_with", isa='string', private=True)
 
     def __init__(self, block=None, role=None, task_include=None):
         ''' constructors a task, without the Task.load classmethod, it will be pretty blank '''

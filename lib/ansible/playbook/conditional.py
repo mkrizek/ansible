@@ -29,7 +29,7 @@ from ansible import constants as C
 from ansible.errors import AnsibleError, AnsibleUndefinedVariable
 from ansible.module_utils.six import text_type
 from ansible.module_utils._text import to_native
-from ansible.playbook.attribute import FieldAttribute
+from ansible.playbook.attribute import InheritableFieldAttribute
 from ansible.utils.display import Display
 
 display = Display()
@@ -46,7 +46,7 @@ class Conditional:
     to be run conditionally when a condition is met or skipped.
     '''
 
-    when = FieldAttribute(name="when", isa='list', default=list, extend=True, prepend=True)
+    when = InheritableFieldAttribute(name="when", isa='list', default=list, extend=True, prepend=True)
 
     def __init__(self, loader=None):
         # when used directly, this class needs a loader, but we want to

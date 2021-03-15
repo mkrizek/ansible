@@ -21,14 +21,14 @@ __metaclass__ = type
 
 from ansible.errors import AnsibleError
 from ansible.module_utils.six import string_types
-from ansible.playbook.attribute import FieldAttribute
+from ansible.playbook.attribute import InheritableFieldAttribute
 from ansible.template import Templar
 
 
 class Taggable:
 
     untagged = frozenset(['untagged'])
-    tags = FieldAttribute(name="tags", isa='list', default=list, listof=(string_types, int), extend=True)
+    tags = InheritableFieldAttribute(name="tags", isa='list', default=list, listof=(string_types, int), extend=True)
 
     def _load_tags(self, attr, ds):
         if isinstance(ds, list):

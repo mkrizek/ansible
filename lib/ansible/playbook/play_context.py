@@ -21,20 +21,15 @@
 from __future__ import (absolute_import, division, print_function)
 __metaclass__ = type
 
-import os
-import sys
-
 from ansible import constants as C
 from ansible import context
 from ansible.errors import AnsibleError
-from ansible.module_utils.compat.paramiko import paramiko
 from ansible.module_utils.six import iteritems
-from ansible.playbook.attribute import FieldAttribute
+from ansible.playbook.attribute import InheritableFieldAttribute
 from ansible.playbook.base import Base
 from ansible.plugins import get_plugin_class
 from ansible.utils.display import Display
 from ansible.plugins.loader import get_shell_plugin
-from ansible.utils.ssh_functions import check_for_controlpersist
 
 
 display = Display()
@@ -83,47 +78,47 @@ class PlayContext(Base):
     '''
 
     # base
-    module_compression = FieldAttribute(name="module_compression", isa='string', default=C.DEFAULT_MODULE_COMPRESSION)
-    shell = FieldAttribute(name="shell", isa='string')
-    executable = FieldAttribute(name="executable", isa='string', default=C.DEFAULT_EXECUTABLE)
+    module_compression = InheritableFieldAttribute(name="module_compression", isa='string', default=C.DEFAULT_MODULE_COMPRESSION)
+    shell = InheritableFieldAttribute(name="shell", isa='string')
+    executable = InheritableFieldAttribute(name="executable", isa='string', default=C.DEFAULT_EXECUTABLE)
 
     # connection fields, some are inherited from Base:
     # (connection, port, remote_user, environment, no_log)
-    remote_addr = FieldAttribute(name="remote_addr", isa='string')
-    password = FieldAttribute(name="password", isa='string')
-    timeout = FieldAttribute(name="timeout", isa='int', default=C.DEFAULT_TIMEOUT)
-    connection_user = FieldAttribute(name="connection_user", isa='string')
-    private_key_file = FieldAttribute(name="private_key_file", isa='string', default=C.DEFAULT_PRIVATE_KEY_FILE)
-    pipelining = FieldAttribute(name="pipelining", isa='bool', default=C.ANSIBLE_PIPELINING)
+    remote_addr = InheritableFieldAttribute(name="remote_addr", isa='string')
+    password = InheritableFieldAttribute(name="password", isa='string')
+    timeout = InheritableFieldAttribute(name="timeout", isa='int', default=C.DEFAULT_TIMEOUT)
+    connection_user = InheritableFieldAttribute(name="connection_user", isa='string')
+    private_key_file = InheritableFieldAttribute(name="private_key_file", isa='string', default=C.DEFAULT_PRIVATE_KEY_FILE)
+    pipelining = InheritableFieldAttribute(name="pipelining", isa='bool', default=C.ANSIBLE_PIPELINING)
 
     # networking modules
-    network_os = FieldAttribute(name="network_os", isa='string')
+    network_os = InheritableFieldAttribute(name="network_os", isa='string')
 
     # docker FIXME: remove these
-    docker_extra_args = FieldAttribute(name="docker_extra_args", isa='string')
+    docker_extra_args = InheritableFieldAttribute(name="docker_extra_args", isa='string')
 
     # ???
-    connection_lockfd = FieldAttribute(name="connection_lockfd", isa='int')
+    connection_lockfd = InheritableFieldAttribute(name="connection_lockfd", isa='int')
 
     # privilege escalation fields
-    become = FieldAttribute(name="become", isa='bool')
-    become_method = FieldAttribute(name="become_method", isa='string')
-    become_user = FieldAttribute(name="become_user", isa='string')
-    become_pass = FieldAttribute(name="become_pass", isa='string')
-    become_exe = FieldAttribute(name="become_exe", isa='string', default=C.DEFAULT_BECOME_EXE)
-    become_flags = FieldAttribute(name="become_flags", isa='string', default=C.DEFAULT_BECOME_FLAGS)
-    prompt = FieldAttribute(name="prompt", isa='string')
+    become = InheritableFieldAttribute(name="become", isa='bool')
+    become_method = InheritableFieldAttribute(name="become_method", isa='string')
+    become_user = InheritableFieldAttribute(name="become_user", isa='string')
+    become_pass = InheritableFieldAttribute(name="become_pass", isa='string')
+    become_exe = InheritableFieldAttribute(name="become_exe", isa='string', default=C.DEFAULT_BECOME_EXE)
+    become_flags = InheritableFieldAttribute(name="become_flags", isa='string', default=C.DEFAULT_BECOME_FLAGS)
+    prompt = InheritableFieldAttribute(name="prompt", isa='string')
 
     # general flags
-    verbosity = FieldAttribute(name="verbosity", isa='int', default=0)
-    only_tags = FieldAttribute(name="only_tags", isa='set', default=set)
-    skip_tags = FieldAttribute(name="skip_tags", isa='set', default=set)
+    verbosity = InheritableFieldAttribute(name="verbosity", isa='int', default=0)
+    only_tags = InheritableFieldAttribute(name="only_tags", isa='set', default=set)
+    skip_tags = InheritableFieldAttribute(name="skip_tags", isa='set', default=set)
 
-    start_at_task = FieldAttribute(name="start_at_task", isa='string')
-    step = FieldAttribute(name="step", isa='bool', default=False)
+    start_at_task = InheritableFieldAttribute(name="start_at_task", isa='string')
+    step = InheritableFieldAttribute(name="step", isa='bool', default=False)
 
     # "PlayContext.force_handlers should not be used, the calling code should be using play itself instead"
-    force_handlers = FieldAttribute(name="force_handlers", isa='bool', default=False)
+    force_handlers = InheritableFieldAttribute(name="force_handlers", isa='bool', default=False)
 
     def __init__(self, play=None, passwords=None, connection_lockfd=None):
         # Note: play is really not optional.  The only time it could be omitted is when we create
@@ -374,22 +369,3 @@ class PlayContext(Base):
                         variables[var_opt] = var_val
             except AttributeError:
                 continue
-
-    def _get_attr_connection(self):
-        ''' connections are special, this takes care of responding correctly '''
-        conn_type = None
-        self._squashed = True  # FIXME
-        if self.connection == 'smart':
-            conn_type = 'ssh'
-            # see if SSH can support ControlPersist if not use paramiko
-            if not check_for_controlpersist('ssh') and paramiko is not None:
-                conn_type = "paramiko"
-
-        # if someone did `connection: persistent`, default it to using a persistent paramiko connection to avoid problems
-        elif self.connection == 'persistent' and paramiko is not None:
-            conn_type = 'paramiko'
-
-        if conn_type:
-            self.connection = conn_type
-
-        return self.connection

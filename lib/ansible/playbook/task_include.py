@@ -21,7 +21,7 @@ __metaclass__ = type
 
 import ansible.constants as C
 from ansible.errors import AnsibleParserError
-from ansible.playbook.attribute import FieldAttribute
+from ansible.playbook.attribute import InheritableFieldAttribute
 from ansible.playbook.block import Block
 from ansible.playbook.task import Task
 from ansible.utils.display import Display
@@ -49,7 +49,7 @@ class TaskInclude(Task):
     # =================================================================================
     # ATTRIBUTES
 
-    static = FieldAttribute(name="static", isa='bool', default=None)
+    static = InheritableFieldAttribute(name="static", isa='bool', default=None)
 
     def __init__(self, block=None, role=None, task_include=None):
         super(TaskInclude, self).__init__(block=block, role=role, task_include=task_include)

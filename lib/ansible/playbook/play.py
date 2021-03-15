@@ -24,7 +24,7 @@ from ansible import context
 from ansible.errors import AnsibleParserError, AnsibleAssertionError
 from ansible.module_utils._text import to_native
 from ansible.module_utils.six import string_types
-from ansible.playbook.attribute import FieldAttribute
+from ansible.playbook.attribute import InheritableFieldAttribute
 from ansible.playbook.base import Base
 from ansible.playbook.block import Block
 from ansible.playbook.collectionsearch import CollectionSearch
@@ -53,33 +53,33 @@ class Play(Base, Taggable, CollectionSearch):
     """
 
     # =================================================================================
-    hosts = FieldAttribute(name="hosts", isa='list', required=True, listof=string_types, always_post_validate=True, priority=-1)
+    hosts = InheritableFieldAttribute(name="hosts", isa='list', required=True, listof=string_types, always_post_validate=True, priority=-1)
 
     # Facts
-    gather_facts = FieldAttribute(name="gather_facts", isa='bool', default=None, always_post_validate=True)
-    gather_subset = FieldAttribute(name="gather_subset", isa='list', default=(lambda: C.DEFAULT_GATHER_SUBSET), listof=string_types, always_post_validate=True)
-    gather_timeout = FieldAttribute(name="gather_timeout", isa='int', default=C.DEFAULT_GATHER_TIMEOUT, always_post_validate=True)
-    fact_path = FieldAttribute(name="fact_path", isa='string', default=C.DEFAULT_FACT_PATH)
+    gather_facts = InheritableFieldAttribute(name="gather_facts", isa='bool', default=None, always_post_validate=True)
+    gather_subset = InheritableFieldAttribute(name="gather_subset", isa='list', default=(lambda: C.DEFAULT_GATHER_SUBSET), listof=string_types, always_post_validate=True)
+    gather_timeout = InheritableFieldAttribute(name="gather_timeout", isa='int', default=C.DEFAULT_GATHER_TIMEOUT, always_post_validate=True)
+    fact_path = InheritableFieldAttribute(name="fact_path", isa='string', default=C.DEFAULT_FACT_PATH)
 
     # Variable Attributes
-    vars_files = FieldAttribute(name="vars_files", isa='list', default=list, priority=99)
-    vars_prompt = FieldAttribute(name="vars_prompt", isa='list', default=list, always_post_validate=False)
+    vars_files = InheritableFieldAttribute(name="vars_files", isa='list', default=list, priority=99)
+    vars_prompt = InheritableFieldAttribute(name="vars_prompt", isa='list', default=list, always_post_validate=False)
 
     # Role Attributes
-    roles = FieldAttribute(name="roles", isa='list', default=list, priority=90)
+    roles = InheritableFieldAttribute(name="roles", isa='list', default=list, priority=90)
 
     # Block (Task) Lists Attributes
-    handlers = FieldAttribute(name="handlers", isa='list', default=list)
-    pre_tasks = FieldAttribute(name="pre_tasks", isa='list', default=list)
-    post_tasks = FieldAttribute(name="post_tasks", isa='list', default=list)
-    tasks = FieldAttribute(name="tasks", isa='list', default=list)
+    handlers = InheritableFieldAttribute(name="handlers", isa='list', default=list)
+    pre_tasks = InheritableFieldAttribute(name="pre_tasks", isa='list', default=list)
+    post_tasks = InheritableFieldAttribute(name="post_tasks", isa='list', default=list)
+    tasks = InheritableFieldAttribute(name="tasks", isa='list', default=list)
 
     # Flag/Setting Attributes
-    force_handlers = FieldAttribute(name="force_handlers", isa='bool', default=context.cliargs_deferred_get('force_handlers'), always_post_validate=True)
-    max_fail_percentage = FieldAttribute(name="max_fail_percentage", isa='percent', always_post_validate=True)
-    serial = FieldAttribute(name="serial", isa='list', default=list, always_post_validate=True)
-    strategy = FieldAttribute(name="strategy", isa='string', default=C.DEFAULT_STRATEGY, always_post_validate=True)
-    order = FieldAttribute(name="order", isa='string', always_post_validate=True)
+    force_handlers = InheritableFieldAttribute(name="force_handlers", isa='bool', default=context.cliargs_deferred_get('force_handlers'), always_post_validate=True)
+    max_fail_percentage = InheritableFieldAttribute(name="max_fail_percentage", isa='percent', always_post_validate=True)
+    serial = InheritableFieldAttribute(name="serial", isa='list', default=list, always_post_validate=True)
+    strategy = InheritableFieldAttribute(name="strategy", isa='string', default=C.DEFAULT_STRATEGY, always_post_validate=True)
+    order = InheritableFieldAttribute(name="order", isa='string', always_post_validate=True)
 
     # =================================================================================
 

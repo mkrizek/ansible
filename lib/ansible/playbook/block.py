@@ -21,7 +21,7 @@ __metaclass__ = type
 
 import ansible.constants as C
 from ansible.errors import AnsibleParserError
-from ansible.playbook.attribute import FieldAttribute
+from ansible.playbook.attribute import FieldAttribute, InheritableFieldAttribute
 from ansible.playbook.base import Base
 from ansible.playbook.conditional import Conditional
 from ansible.playbook.collectionsearch import CollectionSearch
@@ -34,18 +34,18 @@ from ansible.utils.sentinel import Sentinel
 class Block(Base, Conditional, CollectionSearch, Taggable):
 
     # main block fields containing the task lists
-    block = FieldAttribute(name="block", isa='list', default=list, inherit=False)
-    rescue = FieldAttribute(name="rescue", isa='list', default=list, inherit=False)
-    always = FieldAttribute(name="always", isa='list', default=list, inherit=False)
+    block = FieldAttribute(name="block", isa='list', default=list)
+    rescue = FieldAttribute(name="rescue", isa='list', default=list)
+    always = FieldAttribute(name="always", isa='list', default=list)
 
     # other fields for task compat
-    notify = FieldAttribute(name="notify", isa='list')
-    delegate_to = FieldAttribute(name="delegate_to", isa='string')
-    delegate_facts = FieldAttribute(name="delegate_facts", isa='bool')
+    notify = InheritableFieldAttribute(name="notify", isa='list')
+    delegate_to = InheritableFieldAttribute(name="delegate_to", isa='string')
+    delegate_facts = InheritableFieldAttribute(name="delegate_facts", isa='bool')
 
     # for future consideration? this would be functionally
     # similar to the 'else' clause for exceptions
-    # otherwise = FieldAttribute(name="otherwise", isa='list')
+    # otherwise = InheritableFieldAttribute(name="otherwise", isa='list')
 
     def __init__(self, play=None, parent_block=None, role=None, task_include=None, use_handlers=False, implicit=False):
         self._play = play

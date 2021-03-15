@@ -19,17 +19,17 @@
 from __future__ import (absolute_import, division, print_function)
 __metaclass__ = type
 
-from ansible.playbook.attribute import FieldAttribute
+from ansible.playbook.attribute import InheritableFieldAttribute
 from ansible.playbook.base import FieldAttributeBase
 
 
 class LoopControl(FieldAttributeBase):
 
-    loop_var = FieldAttribute(name="loop_var", isa='str', default='item')
-    index_var = FieldAttribute(name="index_var", isa='str')
-    label = FieldAttribute(name="label", isa='str')
-    pause = FieldAttribute(name="pause", isa='float', default=0)
-    extended = FieldAttribute(name="extended", isa='bool')
+    loop_var = InheritableFieldAttribute(name="loop_var", isa='str', default='item')
+    index_var = InheritableFieldAttribute(name="index_var", isa='str')
+    label = InheritableFieldAttribute(name="label", isa='str')
+    pause = InheritableFieldAttribute(name="pause", isa='float', default=0)
+    extended = InheritableFieldAttribute(name="extended", isa='bool')
 
     def __init__(self):
         super(LoopControl, self).__init__()

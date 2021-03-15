@@ -18,7 +18,7 @@ from ansible.module_utils.six import iteritems, string_types
 from ansible.module_utils.parsing.convert_bool import boolean
 from ansible.errors import AnsibleParserError, AnsibleUndefinedVariable, AnsibleAssertionError
 from ansible.module_utils._text import to_text, to_native
-from ansible.playbook.attribute import Attribute, FieldAttribute
+from ansible.playbook.attribute import Attribute, FieldAttribute, ConnectionFieldAttribute, InheritableFieldAttribute
 from ansible.parsing.dataloader import DataLoader
 from ansible.utils.display import Display
 from ansible.utils.sentinel import Sentinel
@@ -458,40 +458,40 @@ class FieldAttributeBase:
 
 class Base(FieldAttributeBase):
 
-    name = FieldAttribute(name="name", isa='string', default='', always_post_validate=True, inherit=False)
+    name = FieldAttribute(name="name", isa='string', default='', always_post_validate=True)
 
     # connection/transport
-    connection = FieldAttribute(name="connection", isa='string', default=context.cliargs_deferred_get('connection'))
-    port = FieldAttribute(name="port", isa='int')
-    remote_user = FieldAttribute(name="remote_user", isa='string', default=context.cliargs_deferred_get('remote_user'))
+    connection = ConnectionFieldAttribute(name="connection", isa='string', default=context.cliargs_deferred_get('connection'))
+    port = InheritableFieldAttribute(name="port", isa='int')
+    remote_user = InheritableFieldAttribute(name="remote_user", isa='string', default=context.cliargs_deferred_get('remote_user'))
 
     # variables
-    vars = FieldAttribute(name="vars", isa='dict', priority=100, inherit=False, static=True)
+    vars = FieldAttribute(name="vars", isa='dict', priority=100, static=True)
 
     # module default params
-    module_defaults = FieldAttribute(name="module_defaults", isa='list', extend=True, prepend=True)
+    module_defaults = InheritableFieldAttribute(name="module_defaults", isa='list', extend=True, prepend=True)
 
     # flags and misc. settings
-    environment = FieldAttribute(name="environment", isa='list', extend=True, prepend=True)
-    no_log = FieldAttribute(name="no_log", isa='bool')
-    run_once = FieldAttribute(name="run_once", isa='bool')
-    ignore_errors = FieldAttribute(name="ignore_errors", isa='bool')
-    ignore_unreachable = FieldAttribute(name="ignore_unreachable", isa='bool')
-    check_mode = FieldAttribute(name="check_mode", isa='bool', default=context.cliargs_deferred_get('check'))
-    diff = FieldAttribute(name="diff", isa='bool', default=context.cliargs_deferred_get('diff'))
-    any_errors_fatal = FieldAttribute(name="any_errors_fatal", isa='bool', default=C.ANY_ERRORS_FATAL)
-    throttle = FieldAttribute(name="throttle", isa='int', default=0)
-    timeout = FieldAttribute(name="timeout", isa='int', default=C.TASK_TIMEOUT)
+    environment = InheritableFieldAttribute(name="environment", isa='list', extend=True, prepend=True)
+    no_log = InheritableFieldAttribute(name="no_log", isa='bool')
+    run_once = InheritableFieldAttribute(name="run_once", isa='bool')
+    ignore_errors = InheritableFieldAttribute(name="ignore_errors", isa='bool')
+    ignore_unreachable = InheritableFieldAttribute(name="ignore_unreachable", isa='bool')
+    check_mode = InheritableFieldAttribute(name="check_mode", isa='bool', default=context.cliargs_deferred_get('check'))
+    diff = InheritableFieldAttribute(name="diff", isa='bool', default=context.cliargs_deferred_get('diff'))
+    any_errors_fatal = InheritableFieldAttribute(name="any_errors_fatal", isa='bool', default=C.ANY_ERRORS_FATAL)
+    throttle = InheritableFieldAttribute(name="throttle", isa='int', default=0)
+    timeout = InheritableFieldAttribute(name="timeout", isa='int', default=C.TASK_TIMEOUT)
 
     # explicitly invoke a debugger on tasks
-    debugger = FieldAttribute(name="debugger", isa='string')
+    debugger = InheritableFieldAttribute(name="debugger", isa='string')
 
     # Privilege escalation
-    become = FieldAttribute(name="become", isa='bool', default=context.cliargs_deferred_get('become'))
-    become_method = FieldAttribute(name="become_method", isa='string', default=context.cliargs_deferred_get('become_method'))
-    become_user = FieldAttribute(name="become_user", isa='string', default=context.cliargs_deferred_get('become_user'))
-    become_flags = FieldAttribute(name="become_flags", isa='string', default=context.cliargs_deferred_get('become_flags'))
-    become_exe = FieldAttribute(name="become_exe", isa='string', default=context.cliargs_deferred_get('become_exe'))
+    become = InheritableFieldAttribute(name="become", isa='bool', default=context.cliargs_deferred_get('become'))
+    become_method = InheritableFieldAttribute(name="become_method", isa='string', default=context.cliargs_deferred_get('become_method'))
+    become_user = InheritableFieldAttribute(name="become_user", isa='string', default=context.cliargs_deferred_get('become_user'))
+    become_flags = InheritableFieldAttribute(name="become_flags", isa='string', default=context.cliargs_deferred_get('become_flags'))
+    become_exe = InheritableFieldAttribute(name="become_exe", isa='string', default=context.cliargs_deferred_get('become_exe'))
 
     # used to hold sudo/su stuff
     DEPRECATED_ATTRIBUTES = []

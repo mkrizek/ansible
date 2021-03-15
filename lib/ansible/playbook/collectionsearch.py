@@ -5,7 +5,7 @@ from __future__ import (absolute_import, division, print_function)
 __metaclass__ = type
 
 from ansible.module_utils.six import string_types
-from ansible.playbook.attribute import FieldAttribute
+from ansible.playbook.attribute import InheritableFieldAttribute
 from ansible.utils.collection_loader import AnsibleCollectionConfig
 from ansible.template import is_template, Environment
 from ansible.utils.display import Display
@@ -34,7 +34,7 @@ def _ensure_default_collection(collection_list=None):
 class CollectionSearch:
 
     # this needs to be populated before we can resolve tasks/roles/etc
-    collections = FieldAttribute(name="collections", isa='list', listof=string_types, priority=100, default=_ensure_default_collection,
+    collections = InheritableFieldAttribute(name="collections", isa='list', listof=string_types, priority=100, default=_ensure_default_collection,
                                   always_post_validate=True, static=True)
 
     def _load_collections(self, attr, ds):
