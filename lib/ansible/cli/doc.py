@@ -485,7 +485,7 @@ class DocCLI(CLI, RoleMixin):
                         # we should only need these once
                         if 'type' not in kdata:
 
-                            fa = getattr(PB_LOADED[pobj], '_%s' % keyword)
+                            fa = PB_LOADED[pobj].get_attributes().get(keyword)
                             if getattr(fa, 'private'):
                                 kdata = {}
                                 raise KeyError
