@@ -57,7 +57,8 @@ class Play(Base, Taggable, CollectionSearch):
 
     # Facts
     gather_facts = InheritableFieldAttribute(name="gather_facts", isa='bool', default=None, always_post_validate=True)
-    gather_subset = InheritableFieldAttribute(name="gather_subset", isa='list', default=(lambda: C.DEFAULT_GATHER_SUBSET), listof=string_types, always_post_validate=True)
+    gather_subset = InheritableFieldAttribute(name="gather_subset", isa='list', default=(lambda: C.DEFAULT_GATHER_SUBSET), listof=string_types,
+                                              always_post_validate=True)
     gather_timeout = InheritableFieldAttribute(name="gather_timeout", isa='int', default=C.DEFAULT_GATHER_TIMEOUT, always_post_validate=True)
     fact_path = InheritableFieldAttribute(name="fact_path", isa='string', default=C.DEFAULT_FACT_PATH)
 
@@ -75,7 +76,8 @@ class Play(Base, Taggable, CollectionSearch):
     tasks = InheritableFieldAttribute(name="tasks", isa='list', default=list)
 
     # Flag/Setting Attributes
-    force_handlers = InheritableFieldAttribute(name="force_handlers", isa='bool', default=context.cliargs_deferred_get('force_handlers'), always_post_validate=True)
+    force_handlers = InheritableFieldAttribute(name="force_handlers", isa='bool', default=context.cliargs_deferred_get('force_handlers'),
+                                               always_post_validate=True)
     max_fail_percentage = InheritableFieldAttribute(name="max_fail_percentage", isa='percent', always_post_validate=True)
     serial = InheritableFieldAttribute(name="serial", isa='list', default=list, always_post_validate=True)
     strategy = InheritableFieldAttribute(name="strategy", isa='string', default=C.DEFAULT_STRATEGY, always_post_validate=True)
@@ -203,7 +205,7 @@ class Play(Base, Taggable, CollectionSearch):
         # FIXME if self.roles is default and is not stored in self.__dict__ at this point,
         # we cannot do self.roles[:0] = roles because self.roles[:0] would return a new []
         # object and the result would be lost
-        #self.roles[:0] = roles
+        # self.roles[:0] = roles
         self.roles = roles + self.roles
 
         return self.roles

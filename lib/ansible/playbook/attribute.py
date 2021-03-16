@@ -148,7 +148,7 @@ class InheritableFieldAttribute(FieldAttribute):
         extend=False,
         prepend=False,
     ):
-        super(FieldAttribute, self).__init__(
+        super(InheritableFieldAttribute, self).__init__(
             name=name,
             isa=isa,
             private=private,
