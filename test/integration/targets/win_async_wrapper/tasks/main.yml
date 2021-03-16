@@ -5,7 +5,7 @@
 - name: async fire and forget
   async_test:
     sleep_delay_sec: 15
-  async: 20
+  async_val: 20
   poll: 0
   register: asyncresult
 
@@ -24,7 +24,7 @@
 - name: async poll immediate success
   async_test:
     sleep_delay_sec: 0
-  async: 10
+  async_val: 10
   poll: 1
   register: asyncresult
 
@@ -62,7 +62,7 @@
 - name: async poll retry
   async_test:
     sleep_delay_sec: 5
-  async: 10
+  async_val: 10
   poll: 1
   register: asyncresult
 
@@ -99,7 +99,7 @@
 - name: async poll timeout
   async_test:
     sleep_delay_sec: 5
-  async: 3
+  async_val: 3
   poll: 1
   register: asyncresult
   ignore_errors: true
@@ -117,7 +117,7 @@
 - name: async poll graceful module failure
   async_test:
     fail_mode: graceful
-  async: 5
+  async_val: 5
   poll: 1
   register: asyncresult
   ignore_errors: true
@@ -135,7 +135,7 @@
 - name: async poll exception module failure
   async_test:
     fail_mode: exception
-  async: 5
+  async_val: 5
   poll: 1
   register: asyncresult
   ignore_errors: true
@@ -152,7 +152,7 @@
 
 - name: echo some non ascii characters
   win_command: cmd.exe /c echo über den Fußgängerübergang gehen
-  async: 10
+  async_val: 10
   poll: 1
   register: nonascii_output
 
@@ -168,7 +168,7 @@
 - name: test async with custom async dir
   win_shell: echo hi
   register: async_custom_dir
-  async: 5
+  async_val: 5
   vars:
     ansible_async_dir: '{{win_output_dir}}'
 
@@ -180,7 +180,7 @@
 - name: test async fire and forget with custom async dir
   win_shell: echo hi
   register: async_custom_dir_poll
-  async: 5
+  async_val: 5
   poll: 0
   vars:
     ansible_async_dir: '{{win_output_dir}}'
@@ -210,7 +210,7 @@
 #- name: loop async success
 #  async_test:
 #    sleep_delay_sec: 3
-#  async: 10
+#  async_val: 10
 #  poll: 0
 #  with_sequence: start=1 end=4
 #  register: async_many

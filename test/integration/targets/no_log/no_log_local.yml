@@ -43,7 +43,7 @@
       ignore_errors: yes
 
     - name: async task args should suppressed with no_log
-      async: 10
+      async_val: 10
       poll: 1
       shell: echo "DO_NOT_LOG_ASYNC_TASK_SUCCEEDED"
       no_log: true

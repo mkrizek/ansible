@@ -21,7 +21,7 @@
 - name: test that we can recover from initial failures to read
   async_test:
     fail_mode: recovered_fail
-  async: 10
+  async_val: 10
   poll: 1
   register: async_result
 

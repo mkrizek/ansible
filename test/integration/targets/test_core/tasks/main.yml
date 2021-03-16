@@ -146,13 +146,13 @@
 
 - name: Complete an async task
   command: id
-  async: 10
+  async_val: 10
   poll: 1
   register: async_completed
 
 - name: Start an async task without waiting for completion
   shell: sleep 3
-  async: 10
+  async_val: 10
   poll: 0
   register: async_incomplete
 

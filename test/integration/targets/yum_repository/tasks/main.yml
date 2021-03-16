@@ -98,7 +98,7 @@
         name: "{{ yum_repository_test_repo.name }}"
         baseurl: "{{ yum_repository_test_repo.baseurl }}"
         description: New description
-        async: no
+        async_val: no
         enablegroups: no
         file: "{{ yum_repository_test_repo.name ~ 2 }}"
         ip_resolve: 4
@@ -124,7 +124,7 @@
         name: "{{ yum_repository_test_repo.name }}"
         baseurl: "{{ yum_repository_test_repo.baseurl }}"
         description: New description
-        async: no
+        async_val: no
         enablegroups: no
         file: "{{ yum_repository_test_repo.name ~ 2 }}"
         ip_resolve: 4

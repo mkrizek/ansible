@@ -3,5 +3,5 @@
   tasks:
     - name: Async poll callback test
       command: sleep 5
-      async: 6
+      async_val: 6
       poll: 1

@@ -18,7 +18,7 @@
 
 - name: run a 2 second loop
   shell: for i in $(seq 1 2); do echo $i ; sleep 1; done;
-  async: 10
+  async_val: 10
   poll: 1
   register: async_result
 
@@ -63,7 +63,7 @@
 
 - name: test async without polling
   command: sleep 5
-  async: 30
+  async_val: 30
   poll: 0
   register: async_result
 
@@ -79,7 +79,7 @@
 
 - name: test skipped task handling
   command: /bin/true
-  async: 15
+  async_val: 15
   poll: 0
   when: False
 
@@ -87,7 +87,7 @@
 
 - name: 'start a task with "fire-and-forget"'
   command: sleep 3
-  async: 30
+  async_val: 30
   poll: 0
   register: fnf_task
 
@@ -114,7 +114,7 @@
 - name: test graceful module failure
   async_test:
     fail_mode: graceful
-  async: 30
+  async_val: 30
   poll: 1
   register: async_result
   ignore_errors: true
@@ -132,7 +132,7 @@
 - name: test exception module failure
   async_test:
     fail_mode: exception
-  async: 5
+  async_val: 5
   poll: 1
   register: async_result
   ignore_errors: true
@@ -152,7 +152,7 @@
 - name: test leading junk before JSON
   async_test:
     fail_mode: leading_junk
-  async: 5
+  async_val: 5
   poll: 1
   register: async_result
 
@@ -169,7 +169,7 @@
 - name: test trailing junk after JSON
   async_test:
     fail_mode: trailing_junk
-  async: 5
+  async_val: 5
   poll: 1
   register: async_result
 
@@ -187,7 +187,7 @@
 - name: test stderr handling
   async_test:
     fail_mode: stderr
-  async: 30
+  async_val: 30
   poll: 1
   register: async_result
   ignore_errors: true
@@ -222,7 +222,7 @@
   - name: run async task with custom dir
     command: sleep 1
     register: async_custom_dir
-    async: 5
+    async_val: 5
     poll: 1
     vars:
       ansible_async_dir: '{{ custom_async_tmp }}'
@@ -247,7 +247,7 @@
   - name: run async task with custom dir - deprecated format
     command: sleep 1
     register: async_custom_dir_dep
-    async: 5
+    async_val: 5
     poll: 1
     environment:
       ANSIBLE_ASYNC_DIR: '{{ custom_async_tmp }}'
@@ -272,7 +272,7 @@
   - name: run fire and forget async task with custom dir
     command: echo moo
     register: async_fandf_custom_dir
-    async: 5
+    async_val: 5
     poll: 0
     vars:
       ansible_async_dir: '{{ custom_async_tmp }}'
@@ -315,7 +315,7 @@
 - name: Test that async has stdin
   command: >
     {{ ansible_python_interpreter|default('/usr/bin/python') }} -c 'import os; os.fdopen(os.dup(0), "r")'
-  async: 1
+  async_val: 1
   poll: 1
 
 - name: run async poll callback test playbook
