@@ -187,7 +187,7 @@ class FieldAttributeBase:
         new_me = self.__class__()
 
         for name in self.get_attributes().keys():
-            setattr(new_me, name, shallowcopy(getattr(self, name)))
+            setattr(new_me, name, shallowcopy(self.__dict__.get(name, Sentinel)))
 
         new_me._loader = self._loader
         new_me._variable_manager = self._variable_manager
