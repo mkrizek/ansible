@@ -118,6 +118,7 @@ class RoleMetadata(Base, CollectionSearch):
 
         return ds
 
+    # FIXME ??
     def serialize(self):
         return dict(
             allow_duplicates=self._allow_duplicates,
