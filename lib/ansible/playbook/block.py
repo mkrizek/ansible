@@ -313,7 +313,7 @@ class Block(Base, Conditional, CollectionSearch, Taggable):
                         if hasattr(_parent, '_get_parent_attribute'):
                             parent_value = _parent._get_parent_attribute(attr)
                         else:
-                            parent_value = _parent._attributes.get(attr, Sentinel)
+                            parent_value = _parent.__dict__.get(attr, Sentinel)
                         if extend:
                             value = self._extend_value(value, parent_value, prepend)
                         else:
