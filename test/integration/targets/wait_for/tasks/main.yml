@@ -27,7 +27,7 @@
 
 - name: setup remove a file after 3s
   shell: sleep 3 && rm {{ output_dir }}/wait_for_file
-  async_val: 20
+  async: 20
   poll: 0
 
 - name: test for absent path
@@ -46,7 +46,7 @@
 
 - name: setup create a file after 3s
   shell: sleep 3 && touch {{ output_dir }}/wait_for_file
-  async_val: 20
+  async: 20
   poll: 0
 
 - name: test for present path
@@ -64,7 +64,7 @@
 
 - name: setup write keyword to file after 3s
   shell: sleep 3 && echo completed > {{output_dir}}/wait_for_keyword
-  async_val: 20
+  async: 20
   poll: 0
 
 - name: test wait for keyword in file
@@ -84,7 +84,7 @@
 
 - name: setup write keyword to file after 3s
   shell: sleep 3 && echo "completed data 123" > {{output_dir}}/wait_for_keyword
-  async_val: 20
+  async: 20
   poll: 0
 
 - name: test wait for keyword in file with match groups
@@ -133,7 +133,7 @@
 
 - name: setup start SimpleHTTPServer
   shell: sleep 3 && cd {{ files_dir }} && {{ ansible_python.executable }} {{ output_dir}}/testserver.py {{ http_port }}
-  async_val: 120 # this test set can take ~1m to run on FreeBSD (via Shippable)
+  async: 120 # this test set can take ~1m to run on FreeBSD (via Shippable)
   poll: 0
 
 - name: test wait for port with sleep
@@ -160,7 +160,7 @@
 
 - name: Create zombie process
   shell: "{{ ansible_python.executable }} {{ output_dir }}/zombie"
-  async_val: 90
+  async: 90
   poll: 0
 
 - name: test wait for port drained

@@ -155,7 +155,7 @@
   - name: test become + async
     vars: *become_vars
     win_command: whoami
-    async_val: 10
+    async: 10
     register: whoami_out
 
   - name: verify become + async worked

@@ -373,7 +373,7 @@
 
 - name: start SimpleHTTPServer for issues 27617
   shell: cd {{ files_dir }} && {{ ansible_python.executable }} {{ remote_tmp_dir}}/testserver.py {{ http_port }}
-  async_val: 90
+  async: 90
   poll: 0
 
 - name: Wait for SimpleHTTPServer to come up online

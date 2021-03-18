@@ -4,5 +4,5 @@
     - ping:
 
     - command: sleep 1
-      async_val: 2
+      async: 2
       poll: 1

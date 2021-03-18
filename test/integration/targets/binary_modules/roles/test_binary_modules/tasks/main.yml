@@ -28,7 +28,7 @@
 
 - name: Async Hello, World!
   action: "{{ filename }}"
-  async_val: 10
+  async: 10
   poll: 1
   when: ansible_system != 'Win32NT'
   register: async_hello_world
@@ -42,7 +42,7 @@
   action: "{{ filename }}"
   args:
     name: Ansible
-  async_val: 10
+  async: 10
   poll: 1
   when: ansible_system != 'Win32NT'
   register: async_hello_ansible
