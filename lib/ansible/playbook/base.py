@@ -51,9 +51,12 @@ class FieldAttributeBase:
     def get_attributes(cls):
         attributes = {}
         for class_obj in reversed(cls.__mro__):
-            for name, attr in class_obj.__dict__.items():
+            for name, attr in list(class_obj.__dict__.items()):
                 if isinstance(attr, Attribute):
                     attributes[name] = attr
+                    if attr.alias:
+                        setattr(class_obj, attr.alias, attr)
+                        attributes[attr.name] = attr
         return attributes
 
     def dump_me(self, depth=0):
