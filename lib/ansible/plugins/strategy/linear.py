@@ -74,7 +74,7 @@ class StrategyModule(StrategyBase):
     def _prepare_and_create_noop_block_from(self, original_block, parent, iterator):
         self.noop_task = Task()
         self.noop_task.action = 'meta'
-        self.noop_task.args = {'_raw_params': 'noop'}
+        self.noop_task.args['_raw_params'] = 'noop'
         self.noop_task.implicit = True
         self.noop_task.set_loader(iterator._play._loader)
 
@@ -89,7 +89,7 @@ class StrategyModule(StrategyBase):
 
         noop_task = Task()
         noop_task.action = 'meta'
-        noop_task.args = {'_raw_params': 'noop'}
+        noop_task.args['_raw_params'] = 'noop'
         noop_task.implicit = True
         noop_task.set_loader(iterator._play._loader)
 

@@ -85,9 +85,7 @@ class IncludeRole(TaskInclude):
         actual_role._metadata.allow_duplicates = self.allow_duplicates
 
         if self.statically_loaded or self.public:
-            # FIXME
-            # myplay.roles.append(actual_role)
-            myplay.roles = myplay.roles + [actual_role]
+            myplay.roles.append(actual_role)
 
         # save this for later use
         self._role_path = actual_role._role_path

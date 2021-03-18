@@ -110,13 +110,13 @@ class Attribute:
         return other.priority >= self.priority
 
     def __get__(self, obj, obj_type=None):
-        value = obj.__dict__.get(self.name, self.default)
+        value = obj.__dict__.get(self.name, Sentinel)
 
         if value is Sentinel:
             value = self.default
-
-        if callable(value):
-            value = value()
+            if callable(value):
+                value = value()
+                obj.__dict__[self.name] = value
 
         return value
 
@@ -166,18 +166,18 @@ class InheritableFieldAttribute(FieldAttribute):
 
     def __get__(self, obj, obj_type=None):
         if getattr(obj, '_squashed', False) or getattr(obj, '_finalized', False):
-            value = obj.__dict__.get(self.name, self.default)
+            value = obj.__dict__.get(self.name, Sentinel)
         else:
             try:
                 value = obj._get_parent_attribute(self.name)
             except AttributeError:
-                value = obj.__dict__.get(self.name, self.default)
+                value = obj.__dict__.get(self.name, Sentinel)
 
         if value is Sentinel:
             value = self.default
-
-        if callable(value):
-            value = value()
+            if callable(value):
+                value = value()
+                obj.__dict__[self.name] = value
 
         return value
 

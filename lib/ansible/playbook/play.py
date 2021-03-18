@@ -202,11 +202,7 @@ class Play(Base, Taggable, CollectionSearch):
         roles = []
         for ri in role_includes:
             roles.append(Role.load(ri, play=self))
-        # FIXME if self.roles is default and is not stored in self.__dict__ at this point,
-        # we cannot do self.roles[:0] = roles because self.roles[:0] would return a new []
-        # object and the result would be lost
-        # self.roles[:0] = roles
-        self.roles = roles + self.roles
+        self.roles[:0] = roles
 
         return self.roles
 
