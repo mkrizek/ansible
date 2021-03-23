@@ -489,7 +489,7 @@ class Task(Base, Conditional, Taggable, CollectionSearch):
                     if attr != 'vars' and hasattr(_parent, '_get_parent_attribute'):
                         parent_value = _parent._get_parent_attribute(attr)
                     else:
-                        parent_value = getattr(_parent, attr, Sentinel)
+                        parent_value = _parent.__dict__.get(attr, Sentinel)
 
                     if extend:
                         value = self._extend_value(value, parent_value, prepend)
