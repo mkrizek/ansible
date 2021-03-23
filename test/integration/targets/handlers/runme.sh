@@ -101,3 +101,8 @@ grep -q "handler B" <<< "$result"
 ANSIBLE_STRATEGY=linear ansible-playbook test_handler_blocks.yml -i inventory.handlers -v "$@"
 ANSIBLE_STRATEGY=free ansible-playbook test_handler_blocks.yml -i inventory.handlers -v "$@"
 ansible-playbook test_handlers_meta.yml -i inventory.handlers -vv "$@"
+
+# https://github.com/ansible/ansible/issues/46447
+set +e
+test "$(ansible-playbook 46447.yml -i inventory.handlers -vv "$@" 2>&1 | grep -c 'SHOULD NOT GET HERE')"
+set -e
