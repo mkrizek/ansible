@@ -22,6 +22,7 @@ __metaclass__ = type
 import fnmatch
 
 from ansible import constants as C
+from ansible.errors import AnsibleAssertionError
 from ansible.module_utils.six import iteritems
 from ansible.module_utils.parsing.convert_bool import boolean
 from ansible.playbook.block import Block
@@ -117,6 +118,9 @@ class HostState:
 
     def get_current_block(self):
         return self._blocks[self.cur_block]
+
+    def remove_handlers(self):
+        del(self._handlers[:])
 
     def copy(self):
         new_state = HostState(self._blocks)
@@ -283,7 +287,7 @@ class PlayIterator:
             # if we run past the end of the list we know we're done with
             # this block
             try:
-                block = state._blocks[state.cur_block]
+                block = state.get_current_block()
             except IndexError:
                 state.run_state = self.ITERATING_COMPLETE
                 return (state, None)
@@ -456,7 +460,7 @@ class PlayIterator:
                     if state.fail_state != self.FAILED_NONE and not self._play.force_handlers:
                         state.run_state = self.ITERATING_COMPLETE
                     elif state.cur_handlers_task >= len(state._handlers):
-                        state._handlers = []
+                        state.remove_handlers()
                         state.cur_handlers_task = 0
                         state.run_state = state.pre_flushing_run_state
                     else:
@@ -485,26 +489,26 @@ class PlayIterator:
                 state.tasks_child_state = self._set_failed_state(state.tasks_child_state)
             else:
                 state.fail_state |= self.FAILED_TASKS
-                if state._blocks[state.cur_block].rescue:
+                if state.get_current_block().rescue:
                     state.run_state = self.ITERATING_RESCUE
-                elif state._blocks[state.cur_block].always:
+                elif state.get_current_block().always:
                     state.run_state = self.ITERATING_ALWAYS
                 elif state._handlers and self._play.force_handlers:
                     state.run_state = self.ITERATING_HANDLERS
                 else:
-                    state._handlers = []
+                    state.remove_handlers()
                     state.run_state = self.ITERATING_COMPLETE
         elif state.run_state == self.ITERATING_RESCUE:
             if state.rescue_child_state is not None:
                 state.rescue_child_state = self._set_failed_state(state.rescue_child_state)
             else:
                 state.fail_state |= self.FAILED_RESCUE
-                if state._blocks[state.cur_block].always:
+                if state.get_current_block().always:
                     state.run_state = self.ITERATING_ALWAYS
                 elif state._handlers and self._play.force_handlers:
                     state.run_state = self.ITERATING_HANDLERS
                 else:
-                    state._handlers = []
+                    state.remove_handlers()
                     state.run_state = self.ITERATING_COMPLETE
         elif state.run_state == self.ITERATING_ALWAYS:
             if state.always_child_state is not None:
@@ -514,13 +518,13 @@ class PlayIterator:
                 if state._handlers and self._play.force_handlers:
                     state.run_state = self.ITERATING_HANDLERS
                 else:
-                    state._handlers = []
+                    state.remove_handlers()
                     state.run_state = self.ITERATING_COMPLETE
         elif state.run_state == self.ITERATING_HANDLERS:
             if state.handlers_child_state is not None:
                 state.handlers_child_state = self._set_failed_state(state.handlers_child_state)
             else:
-                state._handlers = []
+                state.remove_handlers()
                 state.fail_state |= self.FAILED_HANDLERS
                 state.run_state = self.ITERATING_COMPLETE
         return state
@@ -551,7 +555,7 @@ class PlayIterator:
             else:
                 return not (state.did_rescue and state.fail_state & self.FAILED_ALWAYS == 0)
         elif state.run_state == self.ITERATING_TASKS and self._check_failed_state(state.tasks_child_state):
-            cur_block = state._blocks[state.cur_block]
+            cur_block = state.get_current_block()
             if len(cur_block.rescue) > 0 and state.fail_state & self.FAILED_RESCUE == 0:
                 return False
             else:
@@ -572,7 +576,8 @@ class PlayIterator:
             return self.get_active_state(state.rescue_child_state)
         elif state.run_state == self.ITERATING_ALWAYS and state.always_child_state is not None:
             return self.get_active_state(state.always_child_state)
-        # FIXME handlers_child_state
+        elif state.run_state == self.ITERATING_HANDLERS and state.handlers_child_state is not None:
+            return self.get_active_state(state.handlers_child_state)
         return state
 
     def is_any_block_rescuing(self, state):
@@ -599,7 +604,7 @@ class PlayIterator:
             if state.tasks_child_state:
                 state.tasks_child_state = self._insert_tasks_into_state(state.tasks_child_state, task_list)
             else:
-                target_block = state._blocks[state.cur_block].copy()
+                target_block = state.get_current_block().copy()
                 before = target_block.block[:state.cur_regular_task]
                 after = target_block.block[state.cur_regular_task:]
                 target_block.block = before + task_list + after
@@ -608,7 +613,7 @@ class PlayIterator:
             if state.rescue_child_state:
                 state.rescue_child_state = self._insert_tasks_into_state(state.rescue_child_state, task_list)
             else:
-                target_block = state._blocks[state.cur_block].copy()
+                target_block = state.get_current_block().copy()
                 before = target_block.rescue[:state.cur_rescue_task]
                 after = target_block.rescue[state.cur_rescue_task:]
                 target_block.rescue = before + task_list + after
@@ -617,11 +622,14 @@ class PlayIterator:
             if state.always_child_state:
                 state.always_child_state = self._insert_tasks_into_state(state.always_child_state, task_list)
             else:
-                target_block = state._blocks[state.cur_block].copy()
+                target_block = state.get_current_block().copy()
                 before = target_block.always[:state.cur_always_task]
                 after = target_block.always[state.cur_always_task:]
                 target_block.always = before + task_list + after
                 state._blocks[state.cur_block] = target_block
+        # elif state.run_state == self.ITERATING_HANDLERS:
+        #     raise AnsibleAssertionError("Handlers should be added using add_handler or add_included_handlers methods." + ', '.join(task_list))
+
         return state
 
     def add_tasks(self, host, task_list):
@@ -629,6 +637,7 @@ class PlayIterator:
 
     def add_handler(self, host, handler):
         # TODO filter tags to allow tags on handlers
+        # https://github.com/ansible/ansible/issues/50044
         if handler not in self._host_states[host.name]._handlers:
             self._host_states[host.name]._handlers.append(handler)
             return True

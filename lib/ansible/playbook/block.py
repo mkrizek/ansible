@@ -47,12 +47,12 @@ class Block(Base, Conditional, CollectionSearch, Taggable):
     # similar to the 'else' clause for exceptions
     # _otherwise = FieldAttribute(isa='list')
 
-    def __init__(self, play=None, parent_block=None, role=None, task_include=None, use_handlers=False, implicit=False):
+    def __init__(self, play=None, parent_block=None, role=None, task_include=None, implicit=False):
         self._play = play
         self._role = role
         self._parent = None
         self._dep_chain = None
-        self._use_handlers = use_handlers
+        self._use_handlers = False
         self._implicit = implicit
 
         if task_include:
@@ -73,21 +73,6 @@ class Block(Base, Conditional, CollectionSearch, Taggable):
         '''object comparison based on _uuid'''
         return self._uuid != other._uuid
 
-    def get_name(self, include_role_fqcn=True):
-        ''' return the name of the block '''
-        if self._role:
-            role_name = self._role.get_name(include_role_fqcn=include_role_fqcn)
-
-        if self._role and self.name:
-            return "%s : %s" % (role_name, self.name)
-        elif self.name:
-            return self.name
-        # else:
-        #     if self._role:
-        #         return "%s : %s" % (role_name, self.action)
-        #     else:
-        #         return "%s" % (self.action,)
-
     def get_vars(self):
         '''
         Blocks do not store variables directly, however they may be a member
@@ -102,9 +87,9 @@ class Block(Base, Conditional, CollectionSearch, Taggable):
         return all_vars
 
     @staticmethod
-    def load(data, play=None, parent_block=None, role=None, task_include=None, use_handlers=False, variable_manager=None, loader=None):
+    def load(data, play=None, parent_block=None, role=None, task_include=None, variable_manager=None, loader=None):
         implicit = not Block.is_block(data)
-        b = Block(play=play, parent_block=parent_block, role=role, task_include=task_include, use_handlers=use_handlers, implicit=implicit)
+        b = Block(play=play, parent_block=parent_block, role=role, task_include=task_include, implicit=implicit)
         return b.load_data(data, variable_manager=variable_manager, loader=loader)
 
     @staticmethod

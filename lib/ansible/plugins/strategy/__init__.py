@@ -44,6 +44,7 @@ from ansible.module_utils._text import to_text
 from ansible.module_utils.connection import Connection, ConnectionError
 from ansible.playbook.conditional import Conditional
 from ansible.playbook.handler import Handler
+from ansible.playbook.handler_block import HandlerBlock
 from ansible.playbook.helpers import load_list_of_blocks
 from ansible.playbook.included_file import IncludedFile
 from ansible.playbook.task_include import TaskInclude
@@ -457,6 +458,7 @@ class StrategyBase:
             for handler_block in reversed(handler_blocks):
                 if not handler_block.name:
                     # unnamed block, implicit or user-defined, treat all tasks within the block.block as separate handlers
+                    # rescue and always sections are ignored
                     handlers = handler_block.block
                 else:
                     # the whole block is a handler
@@ -493,8 +495,8 @@ class StrategyBase:
                             # out unnecessarily
                             continue
                     else:
-                        # FIXME ugh, flatten blocks instead? ugh
-                        from ansible.playbook.handler_block import HandlerBlock
+                        # if this is an unnamed handler task we can ignore it,
+                        # otherwise we need to process handlers within the unnamed block
                         if isinstance(handler, HandlerBlock):
                             target_handler = search_handler_blocks_by_name(handler_name, [handler])
                             if target_handler is not None:
@@ -924,13 +926,6 @@ class StrategyBase:
         self._tqm.send_callback('v2_playbook_on_include', included_file)
         display.debug("done processing included file")
         return block_list
-
-    def run_handlers(self, iterator, play_context):
-        '''
-        Runs handlers on those hosts which have been notified.
-        '''
-        # FIXME backwards compat
-        pass
 
     def _take_step(self, task, host=None):
 

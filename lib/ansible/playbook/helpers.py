@@ -78,7 +78,6 @@ def load_list_of_blocks(ds, play, parent_block=None, role=None, task_include=Non
                             parent_block=parent_block,
                             role=role,
                             task_include=task_include,
-                            use_handlers=use_handlers,
                             variable_manager=variable_manager,
                             loader=loader,
                         )
@@ -124,7 +123,6 @@ def load_list_of_tasks(ds, play, block=None, role=None, task_include=None, use_h
                 parent_block=block,
                 role=role,
                 task_include=task_include,
-                use_handlers=use_handlers,
                 variable_manager=variable_manager,
                 loader=loader,
             )
