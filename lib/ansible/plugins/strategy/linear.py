@@ -380,16 +380,12 @@ class StrategyModule(StrategyBase):
                             else:
                                 if isinstance(included_file._task, Handler):
                                     new_blocks = self._load_included_file(included_file, iterator=iterator, is_handler=True)
-                                    for block in new_blocks:
-                                        iterator._play.handlers.append(block)
-
-                                    for block in reversed(new_blocks):
-                                        display.debug(
-                                            "adding block '%s' included in handler '%s'" % (block.get_name(), included_file._task.get_name())
-                                        )
-                                        for host in included_file._hosts:
-                                            iterator.add_included_handlers(host, block, include_task=included_file._task)
-                                        continue
+                                    # TODO filter tags to allow tags on handlers
+                                    iterator._play.handlers.extend(new_blocks)
+                                    for host in included_file._hosts:
+                                        if host in hosts_left:
+                                            iterator.add_included_handlers(host, new_blocks)
+                                    continue
                                 else:
                                     new_blocks = self._load_included_file(included_file, iterator=iterator)
 

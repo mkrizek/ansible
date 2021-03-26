@@ -119,6 +119,23 @@ class HostState:
     def get_current_block(self):
         return self._blocks[self.cur_block]
 
+    def add_handler(self, handler):
+        if handler not in self._handlers:
+            self._handlers.append(handler)
+            return True
+        return False
+
+    def add_included_handlers(self, handler_blocks):
+        if not handler_blocks:
+            return False
+
+        for i, h in enumerate(self._handlers):
+            if h._uuid == handler_blocks[0]._parent._uuid:
+                self._handlers[i + 1:i + 1] = handler_blocks
+                return True
+
+        return False
+
     def remove_handlers(self):
         del(self._handlers[:])
 
@@ -627,8 +644,8 @@ class PlayIterator:
                 after = target_block.always[state.cur_always_task:]
                 target_block.always = before + task_list + after
                 state._blocks[state.cur_block] = target_block
-        # elif state.run_state == self.ITERATING_HANDLERS:
-        #     raise AnsibleAssertionError("Handlers should be added using add_handler or add_included_handlers methods." + ', '.join(task_list))
+        elif state.run_state == self.ITERATING_HANDLERS:
+            raise AnsibleAssertionError("Handlers should be added using add_handler or add_included_handlers methods." + ', '.join(task_list))
 
         return state
 
@@ -636,18 +653,7 @@ class PlayIterator:
         self._host_states[host.name] = self._insert_tasks_into_state(self.get_host_state(host), task_list)
 
     def add_handler(self, host, handler):
-        # TODO filter tags to allow tags on handlers
-        # https://github.com/ansible/ansible/issues/50044
-        if handler not in self._host_states[host.name]._handlers:
-            self._host_states[host.name]._handlers.append(handler)
-            return True
-        return False
+        return self._host_states[host.name].add_handler(handler)
 
-    def add_included_handlers(self, host, handler, include_task):
-        if handler not in self._host_states[host.name]._handlers:
-            for i, h in enumerate(self._host_states[host.name]._handlers):
-                if h._uuid == include_task._uuid:
-                    self._host_states[host.name]._handlers[i + 1:i + 1] = [handler]
-                    return True
-
-        return False
+    def add_included_handlers(self, host, handler_blocks):
+        return self._host_states[host.name].add_included_handlers(handler_blocks)
