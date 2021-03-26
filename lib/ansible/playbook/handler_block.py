@@ -55,6 +55,6 @@ class HandlerBlock(Block):
         return self.name
 
     @staticmethod
-    def load(data, play=None, parent_block=None, role=None, task_include=None, use_handlers=False, variable_manager=None, loader=None):
+    def load(data, play=None, parent_block=None, role=None, task_include=None, variable_manager=None, loader=None):
         b = HandlerBlock(play=play, parent_block=parent_block, role=role, task_include=task_include, implicit=False)
         return b.load_data(data, variable_manager=variable_manager, loader=loader)
