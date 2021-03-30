@@ -35,6 +35,7 @@ import time
 
 from ansible import constants as C
 from ansible.errors import AnsibleError
+from ansible.module_utils.six import iteritems
 from ansible.playbook.handler import Handler
 from ansible.playbook.included_file import IncludedFile
 from ansible.plugins.loader import action_loader
@@ -239,7 +240,7 @@ class StrategyModule(StrategyBase):
             )
 
             if len(included_files) > 0:
-                all_blocks = dict((host, []) for host in hosts_left)
+                final_task_blocks = dict((host, []) for host in hosts_left)
                 for included_file in included_files:
                     display.debug("collecting new blocks for %s" % included_file)
                     try:
@@ -259,6 +260,7 @@ class StrategyModule(StrategyBase):
                                 for host in included_file._hosts:
                                     if host in hosts_left:
                                         iterator.add_included_handlers(host, new_blocks)
+                                # short-circuit the loop here because we already added included handlers into iterator
                                 continue
                             else:
                                 new_blocks = self._load_included_file(included_file, iterator=iterator)
@@ -275,12 +277,12 @@ class StrategyModule(StrategyBase):
                         final_block = new_block.filter_tagged_tasks(task_vars)
                         for host in hosts_left:
                             if host in included_file._hosts:
-                                all_blocks[host].append(final_block)
+                                final_task_blocks[host].append(final_block)
                     display.debug("done collecting new blocks for %s" % included_file)
 
                 display.debug("adding all collected blocks from %d included file(s) to iterator" % len(included_files))
-                for host in hosts_left:
-                    iterator.add_tasks(host, all_blocks[host])
+                for host, tasks in iteritems(final_task_blocks):
+                    iterator.add_tasks(host, tasks)
                 display.debug("done adding collected blocks to iterator")
 
             # pause briefly so we don't spin lock
