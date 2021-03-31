@@ -35,6 +35,7 @@ from ansible import constants as C
 from ansible.errors import AnsibleError, AnsibleAssertionError
 from ansible.executor.play_iterator import PlayIterator
 from ansible.module_utils.six import iteritems
+from ansible.module_utils.six.moves import xrange
 from ansible.module_utils._text import to_text
 from ansible.playbook.block import Block
 from ansible.playbook.handler import Handler
@@ -350,6 +351,23 @@ class StrategyModule(StrategyBase):
                 host_results.extend(results)
 
                 self.update_active_connections(results)
+
+                # handlers are special, similarly to included tasks,
+                # in that whether they are executed is known at runtime
+                # and as such noop tasks need to be added after each lock-step
+                # because we have no way of indicating which handler is "first"
+                # in the PlayIterator
+                noop_handler = Handler()
+                noop_handler.action = 'meta'
+                noop_handler.args['_raw_params'] = 'noop'
+                noop_handler.implicit = True
+                noop_handler.set_loader(iterator._play._loader)
+
+                max_len = max(len(host_state._handlers) for host_name, host_state in iteritems(iterator._host_states))
+                for host_name, host_state in iteritems(iterator._host_states):
+                    num_handlers = len(host_state._handlers)
+                    for _ in xrange(0, max_len - num_handlers):
+                        host_state._handlers.append(noop_handler)
 
                 included_files = IncludedFile.process_include_results(
                     host_results,
