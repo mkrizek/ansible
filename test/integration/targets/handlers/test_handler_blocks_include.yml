@@ -4,7 +4,8 @@
 - block:
     - set_fact:
         included_block_handler: True
-    - fail:
+    - name: EXPECTED FAILURE
+      fail:
   rescue:
     - set_fact:
         included_block_handler_rescue: True

@@ -27,7 +27,8 @@
         - set_fact:
             handler2: True
 
-        - fail:
+        - name: EXPECTED FAILURE
+          fail:
             msg: handler2 fails
       rescue:
         - set_fact:

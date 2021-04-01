@@ -6,7 +6,8 @@
   block:
     - set_fact:
         imported_block_handler: True
-    - fail:
+    - name: EXPECTED FAILURE
+      fail:
   rescue:
     - set_fact:
         imported_block_handler_rescue: True
