@@ -480,7 +480,7 @@ class Base(FieldAttributeBase):
     run_once = InheritableFieldAttribute(name="run_once", isa='bool')
     ignore_errors = InheritableFieldAttribute(name="ignore_errors", isa='bool')
     ignore_unreachable = InheritableFieldAttribute(name="ignore_unreachable", isa='bool')
-    check_mode = InheritableFieldAttribute(name="check_mode", isa='bool', default=context.cliargs_deferred_get('check'))
+    check_mode = InheritableFieldAttribute(name="check_mode", isa='bool', default=context.cliargs_deferred_get('check'), priority=99)
     diff = InheritableFieldAttribute(name="diff", isa='bool', default=context.cliargs_deferred_get('diff'))
     any_errors_fatal = InheritableFieldAttribute(name="any_errors_fatal", isa='bool', default=C.ANY_ERRORS_FATAL)
     throttle = InheritableFieldAttribute(name="throttle", isa='int', default=0)
