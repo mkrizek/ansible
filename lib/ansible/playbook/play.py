@@ -53,7 +53,7 @@ class Play(Base, Taggable, CollectionSearch):
     """
 
     # =================================================================================
-    hosts = InheritableFieldAttribute(name="hosts", isa='list', required=True, listof=string_types, always_post_validate=True, priority=-1)
+    hosts = InheritableFieldAttribute(name="hosts", isa='list', required=True, listof=string_types, always_post_validate=True, priority=-2)
 
     # Facts
     gather_facts = InheritableFieldAttribute(name="gather_facts", isa='bool', default=None, always_post_validate=True)
