@@ -70,10 +70,10 @@ class Play(Base, Taggable, CollectionSearch):
     roles = InheritableFieldAttribute(name="roles", isa='list', default=list, priority=90)
 
     # Block (Task) Lists Attributes
-    handlers = InheritableFieldAttribute(name="handlers", isa='list', default=list)
-    pre_tasks = InheritableFieldAttribute(name="pre_tasks", isa='list', default=list)
-    post_tasks = InheritableFieldAttribute(name="post_tasks", isa='list', default=list)
-    tasks = InheritableFieldAttribute(name="tasks", isa='list', default=list)
+    handlers = InheritableFieldAttribute(name="handlers", isa='list', default=list, priority=-1)
+    pre_tasks = InheritableFieldAttribute(name="pre_tasks", isa='list', default=list, priority=-1)
+    post_tasks = InheritableFieldAttribute(name="post_tasks", isa='list', default=list, priority=-1)
+    tasks = InheritableFieldAttribute(name="tasks", isa='list', default=list, priority=-1)
 
     # Flag/Setting Attributes
     force_handlers = InheritableFieldAttribute(name="force_handlers", isa='bool', default=context.cliargs_deferred_get('force_handlers'),
