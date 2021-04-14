@@ -205,8 +205,7 @@ class PlayIterator:
                        task.get_name() == play_context.start_at_task or fnmatch.fnmatch(task.get_name(), play_context.start_at_task):
                         start_at_matched = True
                         break
-                    else:
-                        self.get_next_task_for_host(host)
+                    self._host_states[host.name] = s
 
                 # finally, reset the host's state to ITERATING_SETUP
                 if start_at_matched:
