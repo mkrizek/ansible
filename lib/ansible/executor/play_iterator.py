@@ -22,6 +22,7 @@ __metaclass__ = type
 import fnmatch
 
 from ansible import constants as C
+from ansible.errors import AnsibleAssertionError
 from ansible.module_utils.six import iteritems
 from ansible.module_utils.parsing.convert_bool import boolean
 from ansible.playbook.block import Block
@@ -134,6 +135,14 @@ class PlayIterator:
     ITERATING_ALWAYS = 3
     ITERATING_COMPLETE = 4
 
+    VALID_ITERATING_STATES = [
+        ITERATING_SETUP,
+        ITERATING_TASKS,
+        ITERATING_RESCUE,
+        ITERATING_ALWAYS,
+        ITERATING_COMPLETE,
+    ]
+
     # the failure states for the play iteration, which are powers
     # of 2 as they may be or'ed together in certain circumstances
     FAILED_NONE = 0
@@ -141,6 +150,14 @@ class PlayIterator:
     FAILED_TASKS = 2
     FAILED_RESCUE = 4
     FAILED_ALWAYS = 8
+
+    VALID_FAILED_STATES = [
+        FAILED_NONE,
+        FAILED_SETUP,
+        FAILED_TASKS,
+        FAILED_RESCUE,
+        FAILED_ALWAYS,
+    ]
 
     def __init__(self, inventory, play, play_context, variable_manager, all_vars, start_at_done=False):
         self._play = play
@@ -557,3 +574,22 @@ class PlayIterator:
 
     def add_tasks(self, host, task_list):
         self._host_states[host.name] = self._insert_tasks_into_state(self.get_host_state(host), task_list)
+
+    def set_state_for_host(self, hostname, state):
+        if not isinstance(state, HostState):
+            raise AnsibleAssertionError('Expected state to be a HostState but was a %s' % type(state))
+        self._host_states[hostname] = state
+
+    def set_run_state_for_host(self, hostname, run_state):
+        if run_state not in self.VALID_ITERATING_STATES:
+            raise AnsibleAssertionError(
+                'Expected run_state to be a valid run_state (%s) but was %s' % (', '.join(self.VALID_ITERATING_STATES), run_state)
+            )
+        self._host_states[hostname].run_state = run_state
+
+    def set_fail_state_for_host(self, hostname, fail_state):
+        if fail_state not in self.VALID_FAILED_STATES:
+            raise AnsibleAssertionError(
+                'Expected fail_state to be a valid fail_state (%s) but was %s' % (', '.join(self.VALID_FAILED_STATES), fail_state)
+            )
+        self._host_states[hostname].fail_state = fail_state
