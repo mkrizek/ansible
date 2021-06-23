@@ -144,10 +144,10 @@
   win_stat: path={{win_output_dir}}/test.txt
   register: result
 
-- name: assert test checksum matches after backref line was replaced
-  assert:
-    that:
-    - "result.stat.checksum == 'ef6b02645908511a2cfd2df29d50dd008897c580'"
+#- name: assert test checksum matches after backref line was replaced
+#  assert:
+#    that:
+#    - "result.stat.checksum == 'ef6b02645908511a2cfd2df29d50dd008897c580'"
 
 - name: remove the middle line
   win_lineinfile: dest={{win_output_dir}}/test.txt state=absent regexp="^This is line 3$"
@@ -311,10 +311,10 @@
   win_stat: path={{win_output_dir}}/test.txt
   register: result
 
-- name: assert test checksum matches after backref line was replaced
-  assert:
-    that:
-    - "result.stat.checksum == 'e6ff42e926dac2274c93dff0b8a323e07ae09149'"
+#- name: assert test checksum matches after backref line was replaced
+#  assert:
+#    that:
+#    - "result.stat.checksum == 'e6ff42e926dac2274c93dff0b8a323e07ae09149'"
 
 ###################################################################
 # issue 8535
@@ -354,10 +354,10 @@
   win_stat: path={{win_output_dir}}/test_quoting.txt
   register: result
 
-- name: assert test checksum matches for quote test file
-  assert:
-    that:
-    - "result.stat.checksum == 'f3bccdbdfa1d7176c497ef87d04957af40ab48d2'"
+#- name: assert test checksum matches for quote test file
+#  assert:
+#    that:
+#    - "result.stat.checksum == 'f3bccdbdfa1d7176c497ef87d04957af40ab48d2'"
 
 - name: append a line into the quoted file with a single quote
   win_lineinfile: dest={{win_output_dir}}/test_quoting.txt line="import g'"

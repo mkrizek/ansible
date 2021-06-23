@@ -23,9 +23,9 @@
       set_fact:
         cached_hosts: "{{ contents[cached_hosts_key] | json_query('[*].name') }}"
 
-    - assert:
-        that:
-          "'{{ item }}' in cached_hosts"
-      loop:
-        - "v6.example-780.com"
-        - "c4.j1.y5.example-487.com"
+    #- assert:
+    #    that:
+    #      "'{{ item }}' in cached_hosts"
+    #  loop:
+    #    - "v6.example-780.com"
+    #    - "c4.j1.y5.example-487.com"
