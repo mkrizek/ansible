@@ -42,7 +42,7 @@ class ActionModule(ActionBase):
 
         # read params
         try:
-            jid = self._task.args["jid"]
+            jid = str(self._task.args["jid"])
         except KeyError:
             raise AnsibleActionFail("jid is required", result=results)
 
