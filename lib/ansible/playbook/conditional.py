@@ -181,8 +181,10 @@ class Conditional:
                 raise AnsibleError("Invalid conditional detected: %s" % to_native(e))
 
             # and finally we generate and template the presented string and look at the resulting string
+            # NOTE in the template below spaces around True and False are intentional to short-circuit
+            # safe_eval and avoid its expensive calls
             presented = "{%% if %s %%} True {%% else %%} False {%% endif %%}" % conditional
-            val = templar.template(presented, disable_lookups=disable_lookups).strip()
+            val = str(templar.template(presented, disable_lookups=disable_lookups)).strip()
             if val == "True":
                 return True
             elif val == "False":
