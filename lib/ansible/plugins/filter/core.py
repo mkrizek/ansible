@@ -163,8 +163,6 @@ def regex_search(value, regex, *args, **kwargs):
                 items.append(match.group(item))
             return items
 
-    return ''
-
 
 def ternary(value, true_val, false_val, none_val=None):
     '''  value ? true_val : false_val '''
