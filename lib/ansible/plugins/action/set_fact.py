@@ -51,7 +51,9 @@ class ActionModule(ActionBase):
 
                 # NOTE: this should really use BOOLEANS from convert_bool, but only in the k=v case,
                 # right now it converts matching explicit YAML strings also when 'jinja2_native' is disabled.
-                if not C.DEFAULT_JINJA2_NATIVE and isinstance(v, string_types) and v.lower() in ('true', 'false', 'yes', 'no'):
+                # enabled for 'jinja2_native' as well to allow for k=v case like
+                # "- set_fact: var1=true" to be boolean for compatibility
+                if isinstance(v, string_types) and v.lower() in ('true', 'false', 'yes', 'no'):
                     v = boolean(v, strict=False)
                 facts[k] = v
         else:
