@@ -22,9 +22,9 @@
 - name: verify non-variable include params
   assert:
     that:
-      - "ca == '1'"
-      - "cb == '2'"
-      - "cc == '3'"
+      - ca|int == 1
+      - cb|int == 2
+      - cc|int == 3
 
 - set_fact:
      a: 101
@@ -36,15 +36,15 @@
 - name: verify variable include params
   assert:
     that:
-      - "ca == 101"
-      - "cb == 102"
-      - "cc == 103"
+      - ca|int == 101
+      - cb|int == 102
+      - cc|int == 103
 
 # Test that strings are not turned into numbers
 - set_fact:
-     a: "101"
-     b: "102"
-     c: "103"
+     a: "{{ 101 | string }}"
+     b: "{{ 102 | string }}"
+     c: "{{ 103 | string }}"
 
 - include: included_task1.yml a={{a}} b={{b}} c=103
 
