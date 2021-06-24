@@ -230,10 +230,10 @@
     path: "{{ output_dir }}/test.txt"
   register: result
 
-#- name: assert test checksum matches after backref line was replaced
-#  assert:
-#    that:
-#      - "result.stat.checksum == '72f60239a735ae06e769d823f5c2b4232c634d9c'"
+- name: assert test checksum matches after backref line was replaced
+  assert:
+    that:
+      - "result.stat.checksum == '72f60239a735ae06e769d823f5c2b4232c634d9c'"
 
 - name: remove the middle line
   lineinfile:
@@ -457,10 +457,10 @@
     path: "{{ output_dir }}/test.txt"
   register: result
 
-#- name: assert test checksum matches after backref line was replaced
-#  assert:
-#    that:
-#      - "result.stat.checksum == '981ad35c4b30b03bc3a1beedce0d1e72c491898e'"
+- name: assert test checksum matches after backref line was replaced
+  assert:
+    that:
+      - "result.stat.checksum == '981ad35c4b30b03bc3a1beedce0d1e72c491898e'"
 
 ###################################################################
 # issue 8535
@@ -479,7 +479,7 @@
 - name: use with_items to add code-like strings to the quoting txt file
   lineinfile:
     dest: "{{ output_dir }}/test_quoting.txt"
-    line: "{{ item }}"
+    line: "{{ item | string }}"
     insertbefore: BOF
   with_items:
     - "'foo'"
@@ -503,10 +503,10 @@
     path: "{{ output_dir }}/test_quoting.txt"
   register: result
 
-#- name: assert test checksum matches after backref line was replaced
-#  assert:
-#    that:
-#    - "result.stat.checksum == '7dc3cb033c3971e73af0eaed6623d4e71e5743f1'"
+- name: assert test checksum matches after backref line was replaced
+  assert:
+    that:
+    - "result.stat.checksum == '7dc3cb033c3971e73af0eaed6623d4e71e5743f1'"
 
 - name: insert a line into the quoted file with a single quote
   lineinfile:
@@ -524,10 +524,10 @@
     path: "{{ output_dir }}/test_quoting.txt"
   register: result
 
-#- name: assert test checksum matches after backref line was replaced
-#  assert:
-#    that:
-#    - "result.stat.checksum == '73b271c2cc1cef5663713bc0f00444b4bf9f4543'"
+- name: assert test checksum matches after backref line was replaced
+  assert:
+    that:
+    - "result.stat.checksum == '73b271c2cc1cef5663713bc0f00444b4bf9f4543'"
 
 - name: insert a line into the quoted file with many double quotation strings
   lineinfile:
@@ -545,10 +545,10 @@
     path: "{{ output_dir }}/test_quoting.txt"
   register: result
 
-#- name: assert test checksum matches after backref line was replaced
-#  assert:
-#    that:
-#    - "result.stat.checksum == 'b10ab2a3c3b6492680c8d0b1d6f35aa6b8f9e731'"
+- name: assert test checksum matches after backref line was replaced
+  assert:
+    that:
+    - "result.stat.checksum == 'b10ab2a3c3b6492680c8d0b1d6f35aa6b8f9e731'"
 
 ###################################################################
 # Issue 28721
