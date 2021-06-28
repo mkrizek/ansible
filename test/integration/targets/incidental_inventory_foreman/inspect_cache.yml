@@ -17,15 +17,15 @@
           - matching_files.matched == 1
     - name: read the cached inventory
       set_fact:
-        contents: "{{ lookup('file', matching_files.files.0.path) }}"
+        contents: "{{ lookup('file', matching_files.files.0.path) | from_json }}"
 
     - name: extract all the host names
       set_fact:
         cached_hosts: "{{ contents[cached_hosts_key] | json_query('[*].name') }}"
 
-    #- assert:
-    #    that:
-    #      "'{{ item }}' in cached_hosts"
-    #  loop:
-    #    - "v6.example-780.com"
-    #    - "c4.j1.y5.example-487.com"
+    - assert:
+        that:
+          "'{{ item }}' in cached_hosts"
+      loop:
+        - "v6.example-780.com"
+        - "c4.j1.y5.example-487.com"
