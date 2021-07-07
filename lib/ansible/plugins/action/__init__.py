@@ -1139,6 +1139,9 @@ class ActionBase(with_metaclass(ABCMeta, object)):
             # FIXME: for backwards compat, figure out if still makes sense
             data['changed'] = True
 
+            from ansible.utils.native_jinja import NativeJinjaText
+            data['ansible_job_id'] = NativeJinjaText(data['ansible_job_id'])
+
         # pre-split stdout/stderr into lines if needed
         if 'stdout' in data and 'stdout_lines' not in data:
             # if the value is 'False', a default won't catch it.
