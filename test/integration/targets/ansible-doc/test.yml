@@ -67,7 +67,7 @@
       register: result
     - assert:
         that:
-          #- '"WARNING" not in result.stderr'
+          - '"WARNING" not in result.stderr'
           - '"TEST_DOCS " in result.stdout'
           - '"AUTHOR: Ansible Core Team" in result.stdout'
 
@@ -76,7 +76,7 @@
       register: result
     - assert:
         that:
-          #- '"WARNING" not in result.stderr'
+          - '"WARNING" not in result.stderr'
           - '"TEST_DOCS_NO_METADATA " in result.stdout'
           - '"AUTHOR: Ansible Core Team" in result.stdout'
 
@@ -85,7 +85,7 @@
       register: result
     - assert:
         that:
-          #- '"WARNING" not in result.stderr'
+          - '"WARNING" not in result.stderr'
           - '"TEST_DOCS_NO_STATUS " in result.stdout'
           - '"AUTHOR: Ansible Core Team" in result.stdout'
 
@@ -94,7 +94,7 @@
       register: result
     - assert:
         that:
-          #- '"WARNING" not in result.stderr'
+          - '"WARNING" not in result.stderr'
           - '"TEST_DOCS_NON_ITERABLE_STATUS " in result.stdout'
           - '"AUTHOR: Ansible Core Team" in result.stdout'
 
@@ -104,7 +104,7 @@
 
     - assert:
         that:
-          #- '"WARNING" not in result.stderr'
+          - '"WARNING" not in result.stderr'
           - '"TEST_DOCS_REMOVED_STATUS " in result.stdout'
           - '"AUTHOR: Ansible Core Team" in result.stdout'
 
